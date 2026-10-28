@@ -6,7 +6,7 @@ interface Props {
   logos?: readonly Logo[]
 }
 
-/** Encabezado del sitio: logos, nombre y descripción. */
+/** Encabezado del sitio: logos uno al lado del otro a la izquierda y el nombre a la derecha. */
 export function Encabezado({ logos = LOGOS }: Props) {
   const base = import.meta.env.BASE_URL
   return (

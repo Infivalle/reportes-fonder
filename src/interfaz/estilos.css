@@ -1,16 +1,25 @@
 /* Vista de indicadores. Siempre en tema claro: azul oscuro sobre blanco, contraste AA. */
 :root {
   color-scheme: light;
+  /* Sin blanco ni negro puros: todo con un leve tono azul. */
   --f-texto: #14213d;
   --f-suave: #44546f;
-  --f-fondo: #ffffff;
-  --f-tarjeta: #f3f6fb;
-  --f-borde: #c9d6ea;
+  --f-fondo: #eaf2fb;
+  --f-cabecera: #dfeafa;
+  --f-panel: #dbe8f8;
+  --f-tarjeta: #f8fbff;
+  --f-borde: #c5d7ee;
   --f-acento: #0f3a7d;
   --f-acento-suave: #b7c9e8;
   --f-aviso-fondo: #fff4d6;
   --f-aviso-texto: #5a4300;
+  /* Tonos planos y suaves de las tarjetas */
+  --t-azul: #3a69b8;
+  --t-turquesa: #2f8f94;
+  --t-verde: #5d9a3a;
+  --t-ambar: #c98a1b;
 }
+
 
 /* "html body" gana a cualquier regla de body de index.css, sin importar el orden de carga. */
 html body {
@@ -99,7 +108,7 @@ html body {
   padding: 0 12px;
   font: inherit;
   color: var(--f-texto);
-  background: var(--f-fondo);
+  background: var(--f-tarjeta);
   border: 1px solid var(--f-borde);
   border-radius: 8px;
 }
@@ -109,20 +118,58 @@ html body {
   outline-offset: 2px;
 }
 
-.indicadores__rejilla {
+.rejilla {
   display: grid;
   gap: 16px;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
 }
 
+.seccion__titulo {
+  margin: 0 0 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--f-acento);
+}
+
+/* Resumen: panel propio, más tenue que la página, para separarlo del detalle. */
+.resumen {
+  padding: 16px;
+  margin-bottom: 32px;
+  background: var(--f-panel);
+  border: 1px solid var(--f-borde);
+  border-radius: 16px;
+}
+
+.resumen .rejilla {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+}
+
 .tarjeta {
+  --tono: var(--t-azul);
   display: flex;
   flex-direction: column;
   gap: 4px;
   padding: 16px;
   background: var(--f-tarjeta);
   border: 1px solid var(--f-borde);
+  border-top: 4px solid var(--tono);
   border-radius: 12px;
+}
+
+.tarjeta--azul { --tono: var(--t-azul); }
+.tarjeta--turquesa { --tono: var(--t-turquesa); }
+.tarjeta--verde { --tono: var(--t-verde); }
+.tarjeta--ambar { --tono: var(--t-ambar); }
+
+/* Tarjetas bajas del resumen: la barra queda siempre al pie, a la misma altura. */
+.tarjeta--resumen .progreso {
+  margin-top: auto;
+}
+
+.tarjeta--resumen .tarjeta__descripcion {
+  margin-bottom: 12px;
 }
 
 .tarjeta__titulo {
@@ -178,7 +225,7 @@ html body {
 .distribucion__barra span {
   display: block;
   height: 8px;
-  background: var(--f-acento-suave);
+  background: color-mix(in srgb, var(--tono, var(--f-acento)) 35%, var(--f-tarjeta));
   border-radius: 4px;
 }
 
@@ -187,7 +234,7 @@ html body {
 }
 
 .distribucion__fila--destacada .distribucion__barra span {
-  background: var(--f-acento);
+  background: var(--tono, var(--f-acento));
 }
 
 .distribucion__casos,
@@ -210,50 +257,68 @@ html body {
   .tarjeta__valor {
     font-size: 2rem;
   }
+
+  .resumen {
+    padding: 12px;
+  }
 }
 
-/* Encabezado del sitio */
+/* Encabezado del sitio: azul claro, línea superior azul, logos a la izquierda en una sola fila */
 .encabezado {
-  color: #ffffff;
-  background: var(--f-acento);
+  color: var(--f-texto);
+  background: var(--f-cabecera);
+  border-top: 4px solid var(--f-acento);
+  border-bottom: 1px solid var(--f-borde);
 }
 
 .encabezado__interior {
   display: flex;
   flex-wrap: wrap;
-  gap: 16px 24px;
+  gap: 12px 24px;
   align-items: center;
+  justify-content: space-between;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 16px;
+  padding: 12px 16px;
+}
+
+.encabezado__logos {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: clamp(12px, 3vw, 28px);
+  align-items: center;
+  min-width: 0;
 }
 
 .encabezado__logo {
   display: block;
-  height: 52px;
+  height: clamp(36px, 7vw, 60px);
   width: auto;
-  max-width: 100%;
+  max-width: 45vw;
   object-fit: contain;
 }
 
-.encabezado__logo {
-  display: block;
-  height: 48px;
-  width: auto;
-  max-width: 160px;
-  object-fit: contain;
+.encabezado__textos {
+  text-align: right;
 }
 
 .encabezado__titulo {
   margin: 0;
-  font-size: 1.6rem;
+  font-size: 1.4rem;
   line-height: 1.2;
+  color: var(--f-acento);
 }
 
 .encabezado__subtitulo {
-  margin: 4px 0 0;
-  font-size: 0.95rem;
-  color: #dbe6f7;
+  margin: 2px 0 0;
+  font-size: 0.9rem;
+  color: var(--f-suave);
+}
+
+@media (max-width: 640px) {
+  .encabezado__textos {
+    text-align: left;
+  }
 }
 
 /* Barra de progreso */
@@ -261,13 +326,13 @@ html body {
   height: 12px;
   margin-top: 12px;
   overflow: hidden;
-  background: var(--f-acento-suave);
+  background: color-mix(in srgb, var(--tono, var(--f-acento)) 22%, var(--f-tarjeta));
   border-radius: 6px;
 }
 
 .progreso__relleno {
   display: block;
   height: 100%;
-  background: var(--f-acento);
+  background: var(--tono, var(--f-acento));
   border-radius: 6px;
 }

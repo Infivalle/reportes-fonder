@@ -5,23 +5,29 @@ import { formatoEntero, formatoPorcentaje } from '../indicadores/formato'
 /** Debajo de este n se avisa que la cifra es poco estable. */
 const N_MINIMO_CONFIABLE = 5
 
+/** Color de acento de la tarjeta (franja superior y barra). Plano y suave. */
+export type Tono = 'azul' | 'turquesa' | 'verde' | 'ambar'
+
 interface PropsTarjeta {
   titulo: string
-  /** Cifra principal ya formateada. */
-  valor: string
+  /** Cifra principal ya formateada; si falta, la tarjeta solo muestra su detalle. */
+  valor?: string
   /** Qué mide la cifra principal, en una línea. */
   descripcion: string
+  tono?: Tono
+  /** Tarjeta baja del resumen superior (la barra queda al pie). */
+  resumen?: boolean
   /** Respuestas con las que se calculó; null cuando el indicador no es sobre respuestas. */
   n: number | null
   children?: ReactNode
 }
 
-export function Tarjeta({ titulo, valor, descripcion, n, children }: PropsTarjeta) {
+export function Tarjeta({ titulo, valor, descripcion, tono = 'azul', resumen = false, n, children }: PropsTarjeta) {
   const pocas = n !== null && n > 0 && n < N_MINIMO_CONFIABLE
   return (
-    <article className="tarjeta" aria-label={titulo}>
-      <h3 className="tarjeta__titulo">{titulo}</h3>
-      <p className="tarjeta__valor">{valor}</p>
+    <article className={`tarjeta tarjeta--${tono}${resumen ? ' tarjeta--resumen' : ''}`} aria-label={titulo}>
+      <h4 className="tarjeta__titulo">{titulo}</h4>
+      {valor !== undefined && <p className="tarjeta__valor">{valor}</p>}
       <p className="tarjeta__descripcion">{descripcion}</p>
       {n === 0 && <p className="tarjeta__n">Sin respuestas</p>}
       {pocas && (

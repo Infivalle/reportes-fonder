@@ -63,100 +63,127 @@ export function VistaIndicadores({ datos }: Props) {
         </p>
       )}
 
-      <div className="indicadores__rejilla">
-        <Tarjeta
-          titulo="Cobertura"
-          valor={c.total === null ? 'Sin dato' : formatoPorcentaje(c.porcentaje)}
-          descripcion={
-            c.total === null
-              ? `${formatoEntero(c.atendidos)} beneficiarios atendidos. Falta cargar el total de beneficiarios del proyecto.`
-              : `${formatoEntero(c.atendidos)} de ${formatoEntero(c.total)} beneficiarios con asesoría.`
-          }
-          n={null}
-        >
-          <Progreso porcentaje={c.porcentaje} etiqueta="Cobertura de beneficiarios" />
-          {c.inconsistente && (
-            <p className="tarjeta__aviso" role="note">
-              Hay más beneficiarios atendidos que el total cargado: el total está desactualizado.
-            </p>
-          )}
-        </Tarjeta>
+      <section className="resumen" aria-labelledby="titulo-resumen">
+        <h3 id="titulo-resumen" className="seccion__titulo">
+          Resumen
+        </h3>
+        <div className="rejilla">
+          <Tarjeta
+            resumen
+            tono="azul"
+            titulo="Cobertura"
+            valor={c.total === null ? 'Sin dato' : formatoPorcentaje(c.porcentaje)}
+            descripcion={
+              c.total === null
+                ? `${formatoEntero(c.atendidos)} beneficiarios atendidos. Falta cargar el total de beneficiarios de la convocatoria.`
+                : `${formatoEntero(c.atendidos)} de ${formatoEntero(c.total)} beneficiarios con asesoría.`
+            }
+            n={null}
+          >
+            <Progreso porcentaje={c.porcentaje} etiqueta="Cobertura de beneficiarios" />
+            {c.inconsistente && (
+              <p className="tarjeta__aviso" role="note">
+                Hay más beneficiarios atendidos que el total cargado: el total está desactualizado.
+              </p>
+            )}
+          </Tarjeta>
 
-        <Tarjeta
-          titulo="Cubrimiento de municipios"
-          valor={`${formatoEntero(m.visitados)} de ${formatoEntero(m.total)}`}
-          descripcion={`Municipios del Valle con al menos un beneficiario atendido (${formatoPorcentaje(m.porcentaje)}).`}
-          n={null}
-        >
-          <Progreso porcentaje={m.porcentaje} etiqueta="Municipios con beneficiarios atendidos" />
-        </Tarjeta>
+          <Tarjeta
+            resumen
+            tono="turquesa"
+            titulo="Cubrimiento de municipios"
+            valor={`${formatoEntero(m.visitados)} de ${formatoEntero(m.total)}`}
+            descripcion={`Municipios del Valle con beneficiarios atendidos (${formatoPorcentaje(m.porcentaje)}).`}
+            n={null}
+          >
+            <Progreso porcentaje={m.porcentaje} etiqueta="Municipios con beneficiarios atendidos" />
+          </Tarjeta>
 
-        <Tarjeta
-          titulo="Satisfacción"
-          valor={formatoPorcentaje(r.satisfaccion.valor)}
-          descripcion="Muy satisfechos o satisfechos."
-          n={r.satisfaccion.n}
-        >
-          <TablaDistribucion
-            titulo="Satisfacción con la asesoría"
-            distribucion={r.satisfaccion.distribucion}
-            resaltar={['Muy satisfecho', 'Satisfecho']}
-          />
-        </Tarjeta>
+          <Tarjeta
+            resumen
+            tono="verde"
+            titulo="Satisfacción"
+            valor={formatoPorcentaje(r.satisfaccion.valor)}
+            descripcion="Muy satisfechos o satisfechos."
+            n={r.satisfaccion.n}
+          >
+            <Progreso porcentaje={r.satisfaccion.valor} etiqueta="Beneficiarios satisfechos" />
+          </Tarjeta>
+        </div>
+      </section>
 
-        <Tarjeta
-          titulo="Resultados esperados"
-          valor={formatoPorcentaje(r.resultados.valor)}
-          descripcion="Obtuvieron los resultados que esperaban."
-          n={r.resultados.n}
-        >
-          <TablaDistribucion
-            titulo="Resultados frente a lo esperado"
-            distribucion={r.resultados.distribucion}
-            resaltar={['Sí']}
-          />
-        </Tarjeta>
+      <section className="detalle" aria-labelledby="titulo-detalle">
+        <h3 id="titulo-detalle" className="seccion__titulo">
+          Detalle de las respuestas
+        </h3>
+        <div className="rejilla">
+          <Tarjeta tono="verde" titulo="Detalle de satisfacción" descripcion="Cómo calificaron la asesoría." n={null}>
+            <TablaDistribucion
+              titulo="Satisfacción con la asesoría"
+              distribucion={r.satisfaccion.distribucion}
+              resaltar={['Muy satisfecho', 'Satisfecho']}
+            />
+          </Tarjeta>
 
-        <Tarjeta
-          titulo="Pagos al día"
-          valor={formatoPorcentaje(r.pagos.valor)}
-          descripcion="Pagan según el cronograma."
-          n={r.pagos.n}
-        >
-          <TablaDistribucion titulo="Pagos según cronograma" distribucion={r.pagos.distribucion} resaltar={['Sí']} />
-        </Tarjeta>
+          <Tarjeta
+            tono="azul"
+            titulo="Resultados esperados"
+            valor={formatoPorcentaje(r.resultados.valor)}
+            descripcion="Obtuvieron los resultados que esperaban."
+            n={r.resultados.n}
+          >
+            <TablaDistribucion
+              titulo="Resultados frente a lo esperado"
+              distribucion={r.resultados.distribucion}
+              resaltar={['Sí']}
+            />
+          </Tarjeta>
 
-        <Tarjeta
-          titulo="Necesidad de nuevo crédito"
-          valor={formatoPorcentaje(r.nuevoCredito.valor)}
-          descripcion="Necesitan otro crédito."
-          n={r.nuevoCredito.n}
-        >
-          <TablaDistribucion
-            titulo="Necesidad de otro crédito"
-            distribucion={r.nuevoCredito.distribucion}
-            resaltar={['Sí']}
-          />
-        </Tarjeta>
+          <Tarjeta
+            tono="turquesa"
+            titulo="Pagos al día"
+            valor={formatoPorcentaje(r.pagos.valor)}
+            descripcion="Pagan según el cronograma."
+            n={r.pagos.n}
+          >
+            <TablaDistribucion titulo="Pagos según cronograma" distribucion={r.pagos.distribucion} resaltar={['Sí']} />
+          </Tarjeta>
 
-        <Tarjeta
-          titulo="Crédito utilizado"
-          valor={r.creditoUtilizado.mediana === null ? 'Sin dato' : formatoPorcentaje(r.creditoUtilizado.mediana)}
-          descripcion="Mediana del porcentaje del crédito utilizado."
-          n={r.creditoUtilizado.n}
-        >
-          <TablaDistribucion titulo="Porcentaje del crédito utilizado" distribucion={r.creditoUtilizado.distribucion} />
-        </Tarjeta>
+          <Tarjeta
+            tono="ambar"
+            titulo="Necesidad de nuevo crédito"
+            valor={formatoPorcentaje(r.nuevoCredito.valor)}
+            descripcion="Necesitan otro crédito."
+            n={r.nuevoCredito.n}
+          >
+            <TablaDistribucion
+              titulo="Necesidad de otro crédito"
+              distribucion={r.nuevoCredito.distribucion}
+              resaltar={['Sí']}
+            />
+          </Tarjeta>
 
-        <Tarjeta
-          titulo="Empleo"
-          valor={rangoMasFrecuente}
-          descripcion="Rango de empleados más frecuente."
-          n={r.empleo.n}
-        >
-          <TablaDistribucion titulo="Empleados actuales" distribucion={r.empleo} />
-        </Tarjeta>
-      </div>
+          <Tarjeta
+            tono="azul"
+            titulo="Crédito utilizado"
+            valor={r.creditoUtilizado.mediana === null ? 'Sin dato' : formatoPorcentaje(r.creditoUtilizado.mediana)}
+            descripcion="Mediana del porcentaje del crédito utilizado."
+            n={r.creditoUtilizado.n}
+          >
+            <TablaDistribucion titulo="Porcentaje del crédito utilizado" distribucion={r.creditoUtilizado.distribucion} />
+          </Tarjeta>
+
+          <Tarjeta
+            tono="turquesa"
+            titulo="Empleo"
+            valor={rangoMasFrecuente}
+            descripcion="Rango de empleados más frecuente."
+            n={r.empleo.n}
+          >
+            <TablaDistribucion titulo="Empleados actuales" distribucion={r.empleo} />
+          </Tarjeta>
+        </div>
+      </section>
 
       <details className="metodo">
         <summary>¿Cómo se calculan los indicadores?</summary>

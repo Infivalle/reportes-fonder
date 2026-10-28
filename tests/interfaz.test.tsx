@@ -80,9 +80,9 @@ afterEach(() => {
 })
 
 describe('VistaIndicadores', () => {
-  it('muestra los ocho indicadores y la fecha de corte', () => {
+  it('muestra los indicadores del resumen y del detalle y la fecha de corte', () => {
     render(<VistaIndicadores datos={datos([{ proyecto: P1, total_beneficiarios: 8 }, { proyecto: 'Fonder Valle Segunda Convocatoria', total_beneficiarios: 12 }])} />)
-    for (const t of ['Cobertura', 'Cubrimiento de municipios', 'Satisfacción', 'Resultados esperados', 'Pagos al día', 'Necesidad de nuevo crédito', 'Crédito utilizado', 'Empleo']) {
+    for (const t of ['Cobertura', 'Cubrimiento de municipios', 'Satisfacción', 'Detalle de satisfacción', 'Resultados esperados', 'Pagos al día', 'Necesidad de nuevo crédito', 'Crédito utilizado', 'Empleo']) {
       expect(tarjeta(t)).toBeInTheDocument()
     }
     expect(screen.getByText(/Fecha de corte: 28 de octubre de 2026/)).toBeInTheDocument()
@@ -123,6 +123,7 @@ describe('VistaIndicadores', () => {
     expect(valorDe('Cubrimiento de municipios')).toBe('1 de 42')
     expect(within(tarjeta('Cubrimiento de municipios')).getByRole('progressbar')).toHaveAttribute('aria-valuenow', '2')
     expect(within(tarjeta('Cobertura')).getByRole('progressbar')).toHaveAttribute('aria-valuenow', '20')
+    expect(within(tarjeta('Satisfacción')).getByRole('progressbar')).toHaveAttribute('aria-valuenow', '50')
   })
 
   it('avisa cuando hay pocas respuestas', () => {
@@ -130,9 +131,15 @@ describe('VistaIndicadores', () => {
     expect(within(tarjeta('Satisfacción')).getByText(/Pocas respuestas/)).toBeInTheDocument()
   })
 
+  it('separa el resumen del detalle con dos secciones con título', () => {
+    render(<VistaIndicadores datos={datos([])} />)
+    expect(screen.getByRole('region', { name: 'Resumen' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Detalle de las respuestas' })).toBeInTheDocument()
+  })
+
   it('cada distribución tiene tabla accesible con sus casos', () => {
     render(<VistaIndicadores datos={datos([])} />)
-    const t = within(tarjeta('Satisfacción')).getByRole('table', { name: 'Satisfacción con la asesoría' })
+    const t = within(tarjeta('Detalle de satisfacción')).getByRole('table', { name: 'Satisfacción con la asesoría' })
     expect(within(t).getByRole('row', { name: /Insatisfecho/ })).toHaveTextContent('2')
   })
 })
