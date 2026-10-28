@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react'
 
 // Ruta base de GitHub Pages: https://<owner>.github.io/repotes-fonder/
 // Si el repositorio cambia de nombre, cambiar también esta constante.
-const BASE = '/repotes-fonder/'
+const BASE = '/reportes-fonder/'
 
 export default defineConfig({
   base: BASE,
