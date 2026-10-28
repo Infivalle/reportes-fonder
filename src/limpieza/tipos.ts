@@ -57,8 +57,10 @@ export interface RegistroBeneficiario {
   municipioEmpresa?: string | null
   tipoEmpresa?: string | null
   anioFundacion?: number | null
-  empleosGenerados?: number | null
-  empleosAGenerar?: number | null
+  /** Rango en texto, p. ej. "1 a 3" o "No genera empleo". */
+  empleosGenerados?: string | null
+  /** Rango en texto, p. ej. "Incrementará 1% a 10%". */
+  empleosAGenerar?: string | null
   /** Situación financiera de la solicitud: dato personal, solo capa privada. */
   patrimonio?: number | null
   pasivos?: number | null

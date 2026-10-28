@@ -319,6 +319,10 @@ function errorEncabezado(encabezado, formato) {
   }
   return errores;
 }
+function repararTexto(v) {
+  if (v === null) return null;
+  return v.replace(/Incrementar\uFFFD/g, "Incrementar\xE1").replace(/incrementar\uFFFD/g, "incrementar\xE1").replace(/n\uFFFDmero/g, "n\xFAmero").replace(/\s+/g, " ").trim();
+}
 function validar(contenido, forzado) {
   const { encabezado, filas } = leerTsv(contenido);
   if (encabezado.length === 0 || encabezado.length === 1 && encabezado[0] === "") {
@@ -487,8 +491,9 @@ function validar(contenido, forzado) {
         municipioEmpresa: texto("municipioempresa"),
         tipoEmpresa: texto("tipoempresa"),
         anioFundacion: enteroSuave("aniofundacion", 1800, 2100),
-        empleosGenerados: enteroSuave("empleosgenerado", 0),
-        empleosAGenerar: enteroSuave("empleosagenerar", 0),
+        // Son rangos en texto ("1 a 3", "Incrementará 1% a 10%"), no números.
+        empleosGenerados: repararTexto(texto("empleosgenerado")),
+        empleosAGenerar: repararTexto(texto("empleosagenerar")),
         patrimonio: decimalSuave("patrimonio"),
         pasivos: decimalSuave("pasivos"),
         dineroSolicitado: decimalSuave("dinerosolicitado"),

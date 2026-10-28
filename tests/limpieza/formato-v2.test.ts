@@ -107,8 +107,8 @@ describe('formato v2: columnas nuevas', () => {
             municipioempresa: 'Toro',
             tipoempresa: 'Persona natural',
             aniofundacion: '2018',
-            empleosgenerado: '2',
-            empleosagenerar: '3.0',
+            empleosgenerado: '1 a 3',
+            empleosagenerar: 'Incrementar\uFFFD 1% a 10%',
             patrimonio: '15000000',
             pasivos: '2000000.50',
             dinerosolicitado: '5000000',
@@ -124,8 +124,8 @@ describe('formato v2: columnas nuevas', () => {
       municipio_empresa: 'Toro',
       tipo_empresa: 'Persona natural',
       anio_fundacion: 2018,
-      empleos_generados: 2,
-      empleos_a_generar: 3,
+      empleos_generados: '1 a 3',
+      empleos_a_generar: 'Incrementará 1% a 10%',
       patrimonio: 15000000,
       pasivos: 2000000.5,
       dinero_solicitado: 5000000,
@@ -154,8 +154,6 @@ describe('formato v2: columnas nuevas', () => {
             patrimonio: 'abc',
             cuotas: '12 cuotas',
             aniofundacion: '0',
-            empleosgenerado: '-1',
-            empleosagenerar: '2.5',
           },
         ]),
       ),
@@ -164,11 +162,9 @@ describe('formato v2: columnas nuevas', () => {
       patrimonio: null,
       cuotas: null,
       anioFundacion: null,
-      empleosGenerados: null,
-      empleosAGenerar: null,
     })
     const avisos = r.resumen.advertencias.join('\n')
-    for (const col of ['patrimonio', 'cuotas', 'aniofundacion', 'empleosgenerado', 'empleosagenerar']) {
+    for (const col of ['patrimonio', 'cuotas', 'aniofundacion']) {
       expect(avisos).toContain(col)
     }
     expect(avisos).toContain('Línea 2')

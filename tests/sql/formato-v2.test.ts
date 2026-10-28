@@ -76,8 +76,8 @@ describe('migración formato v2', () => {
         ciudad: 'Cali',
         tipoempresa: 'Persona jurídica',
         aniofundacion: '2015',
-        empleosgenerado: '4',
-        empleosagenerar: '6',
+        empleosgenerado: '1 a 3',
+        empleosagenerar: 'Incrementará 1% a 10%',
         patrimonio: '30000000',
         pasivos: '4500000.5',
         dinerosolicitado: '8000000',
@@ -100,8 +100,8 @@ describe('migración formato v2', () => {
       municipio_empresa: 'TULU�',
       tipo_empresa: 'Persona jurídica',
       anio_fundacion: 2015,
-      empleos_generados: 4,
-      empleos_a_generar: 6,
+      empleos_generados: '1 a 3',
+      empleos_a_generar: 'Incrementará 1% a 10%',
     })
     expect(Number(a.patrimonio)).toBe(30000000)
     expect(Number(a.pasivos)).toBe(4500000.5)

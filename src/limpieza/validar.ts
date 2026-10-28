@@ -49,6 +49,21 @@ function errorEncabezado(encabezado: readonly string[], formato: FormatoTsv): st
   return errores
 }
 
+/**
+ * Algunos registros de origen traen la letra acentuada dañada ("�"). Para estos dos campos de
+ * respuesta cerrada se restauran las palabras conocidas, para que no se cuenten como categorías
+ * distintas. Cualquier otro daño se deja tal cual.
+ */
+function repararTexto(v: string | null): string | null {
+  if (v === null) return null
+  return v
+    .replace(/Incrementar\uFFFD/g, 'Incrementará')
+    .replace(/incrementar\uFFFD/g, 'incrementará')
+    .replace(/n\uFFFDmero/g, 'número')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 function validar(contenido: string, forzado: FormatoTsv | null): ResultadoValidacion {
   const { encabezado, filas } = leerTsv(contenido)
 
@@ -237,8 +252,9 @@ function validar(contenido: string, forzado: FormatoTsv | null): ResultadoValida
             municipioEmpresa: texto('municipioempresa'),
             tipoEmpresa: texto('tipoempresa'),
             anioFundacion: enteroSuave('aniofundacion', 1800, 2100),
-            empleosGenerados: enteroSuave('empleosgenerado', 0),
-            empleosAGenerar: enteroSuave('empleosagenerar', 0),
+            // Son rangos en texto ("1 a 3", "Incrementará 1% a 10%"), no números.
+            empleosGenerados: repararTexto(texto('empleosgenerado')),
+            empleosAGenerar: repararTexto(texto('empleosagenerar')),
             patrimonio: decimalSuave('patrimonio'),
             pasivos: decimalSuave('pasivos'),
             dineroSolicitado: decimalSuave('dinerosolicitado'),

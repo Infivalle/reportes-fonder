@@ -15,8 +15,8 @@ alter table public.beneficiarios
   add column if not exists municipio_empresa  text,     -- texto original; el código DIVIPOLA elegido está en municipio_codigo
   add column if not exists tipo_empresa       text,
   add column if not exists anio_fundacion     integer,
-  add column if not exists empleos_generados  integer,
-  add column if not exists empleos_a_generar  integer,
+  add column if not exists empleos_generados  text,
+  add column if not exists empleos_a_generar  text,
   -- Situación financiera de la solicitud (dato personal). `numeric` sin escala: el tipo de origen
   -- no está confirmado y un valor decimal no debe truncarse ni desbordar.
   add column if not exists patrimonio         numeric,
