@@ -26,9 +26,34 @@ function escribir(contenido: unknown) {
   writeFileSync(SALIDA, JSON.stringify(contenido) + '\n')
 }
 
+/** Quita lo que suele colarse al pegar el secreto: espacios, comillas o el prefijo "PUBLICO_DB_URL=". */
+function normalizarCadena(bruta: string): string {
+  return bruta
+    .trim()
+    .replace(/^PUBLICO_DB_URL\s*=\s*/i, '')
+    .replace(/^["'`]+|["'`]+$/g, '')
+    .trim()
+}
+
+/**
+ * Pistas sobre por qué la cadena no es válida. Solo describe su forma (sí/no, cantidades):
+ * nunca imprime partes de la cadena, porque el registro de Actions de un repositorio público es visible.
+ */
+function diagnosticar(cadena: string): string[] {
+  const pistas: string[] = []
+  const arrobas = (cadena.match(/@/g) ?? []).length
+  if (!/^postgres(ql)?:\/\//i.test(cadena)) pistas.push('no empieza por postgresql://')
+  if (arrobas !== 1) pistas.push(`tiene ${arrobas} caracteres "@" (debe tener exactamente uno: la contraseña no puede llevar "@")`)
+  if (/\s/.test(cadena)) pistas.push('contiene espacios o saltos de línea')
+  if (/[[\]]/.test(cadena)) pistas.push('contiene corchetes [ ]')
+  if (/["'`]/.test(cadena)) pistas.push('contiene comillas')
+  if (!/:\d+\/[^/]+$/.test(cadena.split('?')[0] ?? '')) pistas.push('no termina en :PUERTO/base (por ejemplo :5432/postgres)')
+  return pistas
+}
+
 async function main() {
   const generadoEn = new Date().toISOString()
-  const cadena = process.env['PUBLICO_DB_URL']
+  const cadena = normalizarCadena(process.env['PUBLICO_DB_URL'] ?? '')
 
   if (!cadena) {
     const vacio: PublicoVacio = { version: 1, vacio: true, motivo: 'PUBLICO_DB_URL no está configurada', generado_en: generadoEn }
@@ -38,7 +63,16 @@ async function main() {
   }
 
   // El parámetro sslmode de la URL se reemplaza por la configuración explícita de abajo
-  const url = new URL(cadena)
+  let url: URL
+  try {
+    url = new URL(cadena)
+  } catch {
+    const pistas = diagnosticar(cadena)
+    throw new Error(
+      'PUBLICO_DB_URL no es una URL válida' +
+        (pistas.length > 0 ? `: ${pistas.join('; ')}` : '. Formato: postgresql://usuario:contraseña@host:5432/postgres'),
+    )
+  }
   url.searchParams.delete('sslmode')
 
   const ca = process.env['PUBLICO_DB_CA']
