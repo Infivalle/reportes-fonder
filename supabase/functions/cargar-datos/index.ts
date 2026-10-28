@@ -3,13 +3,15 @@
 // Para regenerar: npm run build:functions
 
 // src/catalogo/opciones.ts
-var OPCIONES_PROVISIONALES = {
-  satisfaction: ["Muy satisfecho", "Satisfecho", "Poco satisfecho"],
-  resultsasexpected: ["S\xED", "Parcialmente", "No", "Todav\xEDa no se ha evidenciado"],
-  paymentsonschedule: ["S\xED", "No"],
-  needanothercredit: ["S\xED", "No"],
+var OPCIONES_FORMULARIO = {
+  creditusedasapproved: ["S\xED", "No", "Parcialmente"],
+  timetoresults: ["1 mes", "Entre 1 y 6 meses", "M\xE1s de 6 meses", "Todav\xEDa no se ha evidenciado"],
+  resultsasexpected: ["S\xED", "No", "Parcialmente", "Todav\xEDa no se ha evidenciado"],
   financialRecords: ["S\xED", "No"],
-  creditusedasapproved: ["S\xED", "No"],
+  resourcemanager: ["El beneficiario", "Otro"],
+  paymentsonschedule: ["S\xED", "No", "Parcialmente"],
+  satisfaction: ["Muy satisfecho", "Satisfecho", "Poco satisfecho", "Insatisfecho"],
+  needanothercredit: ["S\xED", "No", "Tal vez"],
   currentemployees: ["De 1 a 5", "De 5 a 10", "De 10 a 15"]
 };
 
@@ -445,7 +447,9 @@ var CAMPOS_CATEGORICOS = [
   ["needAnotherCredit", "needanothercredit"],
   ["financialRecords", "financialRecords"],
   ["creditUsedAsApproved", "creditusedasapproved"],
-  ["currentEmployees", "currentemployees"]
+  ["currentEmployees", "currentemployees"],
+  ["timeToResults", "timetoresults"],
+  ["resourceManager", "resourcemanager"]
 ];
 function limpiarTsv(contenido) {
   const validacion = validarTsvV1(contenido);
@@ -500,7 +504,7 @@ function limpiarTsv(contenido) {
   const asesorias = validacion.filas.map(({ asesoria }) => {
     const copia = { ...asesoria };
     for (const [campo, columna] of CAMPOS_CATEGORICOS) {
-      const opciones = OPCIONES_PROVISIONALES[columna] ?? [];
+      const opciones = OPCIONES_FORMULARIO[columna] ?? [];
       const r = normalizarCategoria(copia[campo], opciones);
       copia[campo] = r.valor;
       if (r.fueraDeCatalogo && r.valor !== null) {

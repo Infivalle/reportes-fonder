@@ -1,4 +1,4 @@
-import { OPCIONES_PROVISIONALES } from '../catalogo/opciones.ts'
+import { OPCIONES_FORMULARIO } from '../catalogo/opciones.ts'
 import { esMontoAtipico } from './atipicos.ts'
 import { normalizarCategoria } from './categorias.ts'
 import { decidirDuplicados } from './duplicados.ts'
@@ -54,6 +54,8 @@ const CAMPOS_CATEGORICOS = [
   ['financialRecords', 'financialRecords'],
   ['creditUsedAsApproved', 'creditusedasapproved'],
   ['currentEmployees', 'currentemployees'],
+  ['timeToResults', 'timetoresults'],
+  ['resourceManager', 'resourcemanager'],
 ] as const satisfies readonly (readonly [keyof RegistroAsesoria, string])[]
 
 /**
@@ -128,7 +130,7 @@ export function limpiarTsv(contenido: string): ResultadoCarga {
     .map(({ asesoria }) => {
       const copia: RegistroAsesoria = { ...asesoria }
       for (const [campo, columna] of CAMPOS_CATEGORICOS) {
-        const opciones = OPCIONES_PROVISIONALES[columna] ?? []
+        const opciones = OPCIONES_FORMULARIO[columna] ?? []
         const r = normalizarCategoria(copia[campo], opciones)
         copia[campo] = r.valor
         if (r.fueraDeCatalogo && r.valor !== null) {
