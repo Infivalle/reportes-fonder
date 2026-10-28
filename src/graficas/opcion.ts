@@ -36,12 +36,13 @@ export function hayQueDibujar(datos: DatosGrafica, def: GraficaDef): boolean {
 }
 
 /** Alto del lienzo en píxeles: las barras horizontales crecen con el número de barras. */
-export function altoGrafica(datos: DatosGrafica, def: GraficaDef): number {
+export function altoGrafica(datos: DatosGrafica, def: GraficaDef, compacta = false): number {
   if (def.grafica === 'barras_horizontales') {
-    return Math.min(720, Math.max(260, 70 + datos.categorias.length * Math.max(1, datos.series.length) * 30))
+    const filas = datos.categorias.length * Math.max(1, datos.series.length)
+    return compacta ? Math.min(420, Math.max(180, 50 + filas * 24)) : Math.min(720, Math.max(260, 70 + filas * 30))
   }
-  if (def.grafica === 'dona') return 360
-  return 340
+  if (def.grafica === 'dona') return compacta ? 300 : 360
+  return compacta ? 240 : 340
 }
 
 function dato(c: { valor: number | null; texto: string }): DatoConTexto {
@@ -90,13 +91,21 @@ export function construirOpcion(datos: DatosGrafica, def: GraficaDef): EChartsCo
   const horizontal = def.grafica === 'barras_horizontales'
   const apilada = def.grafica === 'apilada_100'
   const porcentaje = datos.unidad === 'porcentaje'
+  const inclinar = !horizontal && datos.categorias.length > 4
   const eje = (tipo: 'category' | 'value') =>
     tipo === 'category'
       ? {
           type: 'category' as const,
           data: datos.categorias,
           inverse: horizontal,
-          axisLabel: { color: TEXTO, interval: 0, width: horizontal ? 150 : 90, overflow: 'break' as const },
+          // Con muchas categorías verticales las etiquetas se inclinan: en una tarjeta estrecha se pisarían.
+          axisLabel: {
+            color: TEXTO,
+            interval: 0,
+            width: horizontal ? 150 : inclinar ? 110 : 90,
+            overflow: inclinar ? ('truncate' as const) : ('break' as const),
+            rotate: inclinar ? 35 : 0,
+          },
           axisLine: { lineStyle: { color: BORDE } },
         }
       : {

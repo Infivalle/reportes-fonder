@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { buscarCampo } from '../catalogo/campos'
 import { formatoEntero } from '../indicadores/formato'
 import type { DatosGrafica } from './datos'
@@ -10,6 +10,12 @@ import '../interfaz/estilos.css'
 interface Props {
   datos: DatosGrafica
   def: GraficaDef
+  /** Altura reducida, para las tarjetas del tablero. */
+  compacta?: boolean
+  /** Botones junto al título (editar, quitar…): los pone el tablero. */
+  acciones?: ReactNode
+  /** Una línea bajo la base, p. ej. los filtros propios de la gráfica. */
+  nota?: ReactNode
 }
 
 const NOMBRE_MEDIDA: Record<GraficaDef['medida'], string> = {
@@ -63,7 +69,7 @@ function Tabla({ datos, def, visible }: { datos: DatosGrafica; def: GraficaDef; 
 }
 
 /** Una gráfica con su base (n), avisos, y siempre una tabla con los mismos datos. */
-export function VistaGrafica({ datos, def }: Props) {
+export function VistaGrafica({ datos, def, compacta = false, acciones, nota }: Props) {
   const opcion = useMemo(() => construirOpcion(datos, def), [datos, def])
   const sinDatos = datos.series.length === 0 || datos.categorias.length === 0
   const r = datos.resumen
@@ -72,13 +78,17 @@ export function VistaGrafica({ datos, def }: Props) {
     : null
 
   return (
-    <figure className="grafica" aria-label={datos.titulo}>
+    <figure className={compacta ? 'grafica grafica--compacta' : 'grafica'} aria-label={datos.titulo}>
       <figcaption>
-        <h3 className="grafica__titulo">{datos.titulo}</h3>
+        <div className="grafica__cabecera">
+          <h3 className="grafica__titulo">{datos.titulo}</h3>
+          {acciones}
+        </div>
         <p className="grafica__base">
           Base: {formatoEntero(datos.base)} {datos.base === 1 ? 'beneficiario con respuesta' : 'beneficiarios con respuesta'} de{' '}
           {formatoEntero(datos.total)}.
         </p>
+        {nota}
       </figcaption>
 
       {datos.avisos.map((a) => (
@@ -93,7 +103,7 @@ export function VistaGrafica({ datos, def }: Props) {
         </p>
       )}
 
-      {opcion !== null && <Echarts opcion={opcion} alto={altoGrafica(datos, def)} etiqueta={`Gráfica: ${datos.titulo}`} />}
+      {opcion !== null && <Echarts opcion={opcion} alto={altoGrafica(datos, def, compacta)} etiqueta={`Gráfica: ${datos.titulo}`} />}
 
       {resumen !== null && <p className="grafica__resumen">{resumen}</p>}
 

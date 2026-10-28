@@ -45,10 +45,21 @@ function datos(): PublicoJson {
 const SIN = { proyecto: null, municipio: null, mes: null }
 const ultimaOpcion = () => (lienzo.mock.calls.at(-1)![0] as { opcion: { series: { type: string }[] } }).opcion
 
-beforeEach(() => lienzo.mockClear())
-afterEach(cleanup)
+beforeEach(() => {
+  lienzo.mockClear()
+  localStorage.clear()
+})
+afterEach(() => {
+  cleanup()
+  vi.restoreAllMocks()
+})
 
-describe('PaginaGraficas', () => {
+const abrirEditor = async (titulo = 'Satisfacción') => {
+  await userEvent.click(screen.getByRole('button', { name: `Editar: ${titulo}` }))
+  return screen.getByRole('dialog', { name: 'Editar gráfica' })
+}
+
+describe('PaginaGraficas: una gráfica', () => {
   it('arranca con una gráfica de satisfacción, su base y su tabla de datos', () => {
     render(<PaginaGraficas datos={datos()} filtros={SIN} />)
     expect(screen.getByRole('heading', { name: 'Mis gráficas' })).toBeInTheDocument()
@@ -59,73 +70,87 @@ describe('PaginaGraficas', () => {
     expect(within(tabla).getByRole('row', { name: /Muy satisfecho/, hidden: true })).toHaveTextContent('11')
   })
 
+  it('el constructor no ocupa la pantalla: solo existe dentro del panel de edición', async () => {
+    render(<PaginaGraficas datos={datos()} filtros={SIN} />)
+    expect(screen.queryByLabelText('Tipo de gráfica')).not.toBeInTheDocument()
+    const panel = await abrirEditor()
+    expect(within(panel).getByLabelText('Tipo de gráfica')).toBeInTheDocument()
+  })
+
   it('los filtros globales cambian los datos de la gráfica', () => {
     render(<PaginaGraficas datos={datos()} filtros={{ ...SIN, proyecto: 'fondervallesegundaconvocatoria' }} />)
     expect(screen.getByText(/Base: 7 beneficiarios con respuesta de 7/)).toBeInTheDocument()
-  })
-
-  it('al elegir otro campo propone la gráfica de su tipo y solo ofrece las admitidas', async () => {
-    render(<PaginaGraficas datos={datos()} filtros={SIN} />)
-    await userEvent.selectOptions(screen.getByLabelText('¿Qué quiere graficar?'), 'Destino del crédito (mejoras logradas)')
-    expect(screen.getByLabelText('Tipo de gráfica')).toHaveValue('barras_horizontales')
-    const tipos = within(screen.getByLabelText('Tipo de gráfica')).getAllByRole('option').map((o) => o.textContent)
-    expect(tipos).toEqual(['Barras horizontales', 'Solo tabla'])
-    expect(screen.getByRole('heading', { level: 3, name: 'Destino del crédito (mejoras logradas)' })).toBeInTheDocument()
-  })
-
-  it('comparar por otro campo agrupa y suprime las cifras de menos de 5', async () => {
-    render(<PaginaGraficas datos={datos()} filtros={SIN} />)
-    await userEvent.selectOptions(screen.getByLabelText('Comparar por'), 'Convocatoria')
-    expect(screen.getByRole('heading', { level: 3, name: 'Satisfacción por convocatoria' })).toBeInTheDocument()
-    expect(screen.getByRole('note')).toHaveTextContent(/menos de 5 beneficiarios no se muestran/)
-    const fila = screen.getByRole('row', { name: /^Satisfecho/, hidden: true })
-    expect(fila).toHaveTextContent('<5')
-  })
-
-  it('la medida por categoría de un campo numérico exige elegir el campo de comparación', async () => {
-    render(<PaginaGraficas datos={datos()} filtros={SIN} />)
-    await userEvent.selectOptions(screen.getByLabelText('¿Qué quiere graficar?'), 'Crédito utilizado (%)')
-    expect(screen.getByLabelText('Tipo de gráfica')).toHaveValue('histograma')
-    expect(screen.queryByLabelText('Comparar por')).not.toBeInTheDocument()
-    expect(screen.queryByLabelText('Medida')).not.toBeInTheDocument()
-
-    await userEvent.selectOptions(screen.getByLabelText('Tipo de gráfica'), 'Barras por categoría')
-    expect(screen.getByLabelText('Calcular por (obligatorio)')).toBeInTheDocument()
-    expect(screen.getByRole('note')).toHaveTextContent(/Elija un campo/)
-
-    await userEvent.selectOptions(screen.getByLabelText('Calcular por (obligatorio)'), 'Convocatoria')
-    expect(screen.getByRole('heading', { level: 3, name: 'Promedio de crédito utilizado (%) por convocatoria' })).toBeInTheDocument()
-  })
-
-  it('la barra apilada al 100 % no ofrece medida (siempre es porcentaje)', async () => {
-    render(<PaginaGraficas datos={datos()} filtros={SIN} />)
-    await userEvent.selectOptions(screen.getByLabelText('Comparar por'), 'Convocatoria')
-    await userEvent.selectOptions(screen.getByLabelText('Tipo de gráfica'), 'Barra apilada al 100 %')
-    expect(screen.queryByLabelText('Medida')).not.toBeInTheDocument()
-    expect(ultimaOpcion().series.every((s) => s.type === 'bar')).toBe(true)
-  })
-
-  it('la dona solo existe para campos categóricos y no ofrece comparación', async () => {
-    render(<PaginaGraficas datos={datos()} filtros={SIN} />)
-    // Satisfacción es ordinal: no tiene dona.
-    expect(within(screen.getByLabelText('Tipo de gráfica')).queryByRole('option', { name: 'Dona' })).not.toBeInTheDocument()
-
-    await userEvent.selectOptions(screen.getByLabelText('¿Qué quiere graficar?'), 'Convocatoria')
-    await userEvent.selectOptions(screen.getByLabelText('Tipo de gráfica'), 'Dona')
-    expect(screen.queryByLabelText('Comparar por')).not.toBeInTheDocument()
-    expect(ultimaOpcion().series[0]!.type).toBe('pie')
-  })
-
-  it('"Solo tabla" no dibuja el lienzo y muestra la tabla a la vista', async () => {
-    render(<PaginaGraficas datos={datos()} filtros={SIN} />)
-    await userEvent.selectOptions(screen.getByLabelText('Tipo de gráfica'), 'Solo tabla')
-    expect(screen.queryByTestId('lienzo')).not.toBeInTheDocument()
-    expect(screen.getByRole('table', { name: 'Satisfacción' })).toBeVisible()
   })
 
   it('sin respuestas para el filtro, lo dice en vez de dibujar una gráfica vacía', () => {
     render(<PaginaGraficas datos={datos()} filtros={{ ...SIN, municipio: '76834' }} />)
     expect(screen.getByRole('status')).toHaveTextContent(/No hay respuestas/)
     expect(screen.queryByTestId('lienzo')).not.toBeInTheDocument()
+  })
+})
+
+describe('PaginaGraficas: constructor en el panel', () => {
+  it('al elegir otro campo propone la gráfica de su tipo y solo ofrece las admitidas', async () => {
+    render(<PaginaGraficas datos={datos()} filtros={SIN} />)
+    const panel = await abrirEditor()
+    await userEvent.selectOptions(within(panel).getByLabelText('¿Qué quiere graficar?'), 'Destino del crédito (mejoras logradas)')
+    expect(within(panel).getByLabelText('Tipo de gráfica')).toHaveValue('barras_horizontales')
+    const tipos = within(within(panel).getByLabelText('Tipo de gráfica')).getAllByRole('option').map((o) => o.textContent)
+    expect(tipos).toEqual(['Barras horizontales', 'Solo tabla'])
+    expect(within(panel).getByRole('heading', { level: 3, name: 'Destino del crédito (mejoras logradas)' })).toBeInTheDocument()
+  })
+
+  it('comparar por otro campo agrupa y suprime las cifras de menos de 5', async () => {
+    render(<PaginaGraficas datos={datos()} filtros={SIN} />)
+    const panel = await abrirEditor()
+    await userEvent.selectOptions(within(panel).getByLabelText('Comparar por'), 'Convocatoria')
+    expect(within(panel).getByRole('heading', { level: 3, name: 'Satisfacción por convocatoria' })).toBeInTheDocument()
+    expect(within(panel).getByRole('note')).toHaveTextContent(/menos de 5 beneficiarios no se muestran/)
+    expect(within(panel).getByRole('row', { name: /^Satisfecho/, hidden: true })).toHaveTextContent('<5')
+  })
+
+  it('la medida por categoría de un campo numérico exige elegir el campo de comparación', async () => {
+    render(<PaginaGraficas datos={datos()} filtros={SIN} />)
+    const panel = await abrirEditor()
+    const p = within(panel)
+    await userEvent.selectOptions(p.getByLabelText('¿Qué quiere graficar?'), 'Crédito utilizado (%)')
+    expect(p.getByLabelText('Tipo de gráfica')).toHaveValue('histograma')
+    expect(p.queryByLabelText('Comparar por')).not.toBeInTheDocument()
+    expect(p.queryByLabelText('Medida')).not.toBeInTheDocument()
+
+    await userEvent.selectOptions(p.getByLabelText('Tipo de gráfica'), 'Barras por categoría')
+    expect(p.getByLabelText('Calcular por (obligatorio)')).toBeInTheDocument()
+    expect(p.getByRole('note')).toHaveTextContent(/Elija un campo/)
+
+    await userEvent.selectOptions(p.getByLabelText('Calcular por (obligatorio)'), 'Convocatoria')
+    expect(p.getByRole('heading', { level: 3, name: 'Promedio de crédito utilizado (%) por convocatoria' })).toBeInTheDocument()
+  })
+
+  it('la barra apilada al 100 % no ofrece medida (siempre es porcentaje)', async () => {
+    render(<PaginaGraficas datos={datos()} filtros={SIN} />)
+    const panel = await abrirEditor()
+    await userEvent.selectOptions(within(panel).getByLabelText('Comparar por'), 'Convocatoria')
+    await userEvent.selectOptions(within(panel).getByLabelText('Tipo de gráfica'), 'Barra apilada al 100 %')
+    expect(within(panel).queryByLabelText('Medida')).not.toBeInTheDocument()
+    expect(ultimaOpcion().series.every((s) => s.type === 'bar')).toBe(true)
+  })
+
+  it('la dona solo existe para campos categóricos y no ofrece comparación', async () => {
+    render(<PaginaGraficas datos={datos()} filtros={SIN} />)
+    const panel = await abrirEditor()
+    const p = within(panel)
+    expect(within(p.getByLabelText('Tipo de gráfica')).queryByRole('option', { name: 'Dona' })).not.toBeInTheDocument()
+    await userEvent.selectOptions(p.getByLabelText('¿Qué quiere graficar?'), 'Convocatoria')
+    await userEvent.selectOptions(p.getByLabelText('Tipo de gráfica'), 'Dona')
+    expect(p.queryByLabelText('Comparar por')).not.toBeInTheDocument()
+    expect(ultimaOpcion().series[0]!.type).toBe('pie')
+  })
+
+  it('"Solo tabla" no dibuja el lienzo de la vista previa y muestra la tabla a la vista', async () => {
+    render(<PaginaGraficas datos={datos()} filtros={SIN} />)
+    const panel = await abrirEditor()
+    await userEvent.selectOptions(within(panel).getByLabelText('Tipo de gráfica'), 'Solo tabla')
+    expect(within(panel).queryByTestId('lienzo')).not.toBeInTheDocument()
+    expect(within(panel).getByRole('table', { name: 'Satisfacción' })).toBeVisible()
   })
 })

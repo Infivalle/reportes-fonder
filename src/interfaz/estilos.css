@@ -523,3 +523,275 @@ html body {
   text-align: left;
   font-weight: 600;
 }
+
+/* Tablero de "Mis gráficas" */
+.boton {
+  min-height: 44px;
+  padding: 0 16px;
+  font: inherit;
+  font-weight: 600;
+  color: var(--f-acento);
+  background: var(--f-tarjeta);
+  border: 1px solid var(--f-acento);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.boton:hover:not(:disabled) {
+  background: var(--f-acento-suave);
+}
+
+.boton:focus-visible {
+  outline: 3px solid var(--f-acento);
+  outline-offset: 2px;
+}
+
+.boton:disabled {
+  color: var(--f-suave);
+  border-color: var(--f-borde);
+  cursor: not-allowed;
+}
+
+.boton--primario {
+  color: #f8fbff;
+  background: var(--f-acento);
+}
+
+.boton--primario:hover:not(:disabled) {
+  background: #0b2d63;
+}
+
+.boton--primario:disabled {
+  color: var(--f-suave);
+  background: var(--f-panel);
+}
+
+.boton--icono {
+  min-width: 44px;
+  padding: 0;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.boton--texto {
+  min-height: 44px;
+  margin-left: 8px;
+  padding: 0 8px;
+  background: transparent;
+  border-color: transparent;
+  text-decoration: underline;
+}
+
+.tablero__barra {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  margin: 0 0 16px;
+}
+
+.tablero__cuenta {
+  margin-left: auto;
+  font-size: 0.9rem;
+  color: var(--f-suave);
+}
+
+.tablero__mensaje {
+  margin: 0 0 16px;
+  padding: 4px 12px;
+  background: var(--f-panel);
+  border-radius: 8px;
+}
+
+.tablero {
+  display: grid;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr));
+  align-items: start;
+}
+
+.tablero__item {
+  min-width: 0;
+}
+
+.tablero__vacio {
+  padding: 32px 16px;
+  text-align: center;
+  background: var(--f-tarjeta);
+  border: 1px dashed var(--f-acento-suave);
+  border-radius: 12px;
+}
+
+.tablero__vacio h3 {
+  margin: 0 0 4px;
+}
+
+.grafica__cabecera {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.grafica--compacta {
+  padding: 12px;
+}
+
+.grafica--compacta .grafica__titulo {
+  font-size: 1rem;
+}
+
+.grafica__filtros {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  color: var(--f-acento);
+}
+
+/* Seis botones de 44 px no caben en una tarjeta estrecha: bajan a otra línea. */
+.tarjeta-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: flex-end;
+  flex: 0 0 auto;
+  max-width: 100%;
+}
+
+.grafica--compacta .grafica__cabecera {
+  flex-direction: column;
+}
+
+.grafica--compacta .tarjeta-acciones {
+  align-self: stretch;
+  order: -1;
+}
+
+/* Panel lateral y ventana ampliada */
+.panel-fondo {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  justify-content: flex-end;
+  background: rgba(20, 33, 61, 0.45);
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-height: 100dvh;
+  color: var(--f-texto);
+  background: var(--f-fondo);
+  box-shadow: -4px 0 16px rgba(20, 33, 61, 0.25);
+}
+
+.panel:focus {
+  outline: none;
+}
+
+.panel--lateral {
+  max-width: 520px;
+}
+
+.panel--ancho {
+  max-width: 900px;
+  max-height: calc(100dvh - 32px);
+  margin: auto;
+  border-radius: 16px;
+}
+
+.panel__cabecera,
+.panel__pie {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 12px 16px;
+  background: var(--f-cabecera);
+}
+
+.panel__cabecera {
+  justify-content: space-between;
+}
+
+.panel__pie {
+  justify-content: flex-end;
+}
+
+.panel__titulo {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.panel__subtitulo {
+  margin: 8px 0 0;
+  font-size: 1rem;
+}
+
+.panel__cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1 1 auto;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.panel .constructor {
+  padding: 0;
+  background: none;
+  border: 0;
+}
+
+.filtros-propios summary {
+  padding: 10px 0;
+  font-weight: 600;
+  color: var(--f-acento);
+  cursor: pointer;
+}
+
+.filtros-propios summary:focus-visible {
+  outline: 3px solid var(--f-acento);
+  outline-offset: 2px;
+}
+
+.filtros-propios__ayuda {
+  margin: 0 0 8px;
+  font-size: 0.85rem;
+  color: var(--f-suave);
+}
+
+.filtros-propios__campo {
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--f-borde);
+  border-radius: 8px;
+}
+
+.filtros-propios__campo legend {
+  padding: 0 4px;
+  font-weight: 600;
+}
+
+.filtros-propios__opciones {
+  display: flex;
+  flex-direction: column;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.opcion {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-height: 44px;
+}
+
+.opcion input {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+}
