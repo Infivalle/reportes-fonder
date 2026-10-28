@@ -107,7 +107,8 @@ export const GRAFICAS_POR_TIPO: Readonly<Record<TipoCampo, readonly Grafica[]>> 
   rango: ['barras', 'tabla'],
   multivalor: ['barras_horizontales', 'tabla'],
   fecha: ['barras', 'tabla'],
-  numerico: ['histograma', 'tabla'],
+  // histograma: distribución del campo; barras: medida (promedio, mediana…) por categoría de otro campo.
+  numerico: ['histograma', 'barras', 'tabla'],
 }
 
 export const MEDIDAS_POR_TIPO: Readonly<Record<TipoCampo, readonly Medida[]>> = {

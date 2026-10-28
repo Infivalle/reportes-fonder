@@ -3,6 +3,9 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+// jsdom no tiene layout ni ResizeObserver: el lienzo real de ECharts se prueba en graficas-ui.test.tsx.
+vi.mock('../src/graficas/Echarts', () => ({ Echarts: () => null }))
 import { Aplicacion } from '../src/interfaz/Aplicacion'
 import type { FilaPublica, PublicoJson } from '../src/publico/tipos'
 

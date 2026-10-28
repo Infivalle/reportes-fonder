@@ -1,13 +1,15 @@
-import { useMemo } from 'react'
+import { lazy, Suspense, useMemo } from 'react'
 import { BarraFiltros } from './BarraFiltros'
 import { Encabezado } from './Encabezado'
 import { Navegacion } from './Navegacion'
-import { PaginaGraficas } from './PaginaGraficas'
 import { VistaIndicadores } from './VistaIndicadores'
 import { construirHash, opcionesDe, sanearFiltros, type FiltrosGlobales } from './ruta'
 import { irA, useRuta } from './useRuta'
 import { usePublico } from './usePublico'
 import './estilos.css'
+
+// ECharts pesa bastante: solo se descarga al abrir "Mis gráficas" y los indicadores cargan sin él.
+const PaginaGraficas = lazy(() => import('./PaginaGraficas').then((m) => ({ default: m.PaginaGraficas })))
 
 interface Props {
   /** Otra dirección de publico.json (pruebas); por defecto la del sitio. */
@@ -42,7 +44,9 @@ export function Aplicacion({ url }: Props) {
             {ruta === 'indicadores' ? (
               <VistaIndicadores datos={datos} filtros={filtros} />
             ) : (
-              <PaginaGraficas datos={datos} filtros={filtros} />
+              <Suspense fallback={<p role="status">Cargando gráficas…</p>}>
+                <PaginaGraficas datos={datos} filtros={filtros} />
+              </Suspense>
             )}
           </>
         )}

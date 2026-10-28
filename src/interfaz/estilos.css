@@ -423,3 +423,103 @@ html body {
   outline: 3px solid var(--f-acento);
   outline-offset: 2px;
 }
+
+/* Constructor de gráficas */
+.graficas {
+  display: grid;
+  gap: 16px;
+  align-items: start;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 900px) {
+  .graficas {
+    grid-template-columns: minmax(240px, 300px) 1fr;
+  }
+}
+
+.constructor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: var(--f-panel);
+  border: 1px solid var(--f-borde);
+  border-radius: 16px;
+}
+
+.constructor .filtro {
+  min-width: 0;
+}
+
+.grafica {
+  margin: 0;
+  padding: 16px;
+  min-width: 0;
+  background: var(--f-tarjeta);
+  border: 1px solid var(--f-borde);
+  border-top: 4px solid var(--t-azul);
+  border-radius: 12px;
+}
+
+.grafica__titulo {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.grafica__base,
+.grafica__resumen {
+  margin: 4px 0 0;
+  font-size: 0.9rem;
+  color: var(--f-suave);
+}
+
+.grafica__lienzo {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.grafica__detalle {
+  margin-top: 12px;
+  font-size: 0.9rem;
+}
+
+.grafica__detalle summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--f-acento);
+}
+
+.grafica__detalle summary:focus-visible {
+  outline: 3px solid var(--f-acento);
+  outline-offset: 2px;
+}
+
+.grafica__tabla,
+.grafica__detalle .tabla-datos {
+  margin-top: 8px;
+}
+
+.tabla-datos {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.grafica__tabla {
+  overflow-x: auto;
+}
+
+.tabla-datos th,
+.tabla-datos td {
+  padding: 6px 10px;
+  text-align: right;
+  border-bottom: 1px solid var(--f-borde);
+  font-variant-numeric: tabular-nums;
+}
+
+.tabla-datos th[scope='col']:first-child,
+.tabla-datos th[scope='row'] {
+  text-align: left;
+  font-weight: 600;
+}

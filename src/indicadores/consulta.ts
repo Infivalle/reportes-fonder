@@ -59,9 +59,11 @@ export interface Serie {
 }
 
 /** Orden de las categorías: el del catálogo; las desconocidas al final por n; fecha cronológica. */
-function ordenar(campo: CampoCatalogo, conteo: Map<string, number>): string[] {
+export function ordenarCategorias(campo: CampoCatalogo, conteo: ReadonlyMap<string, number>): string[] {
   const claves = [...conteo.keys()]
   if (campo.tipo === 'fecha') return claves.sort()
+  // Las convocatorias siempre en el mismo orden (Primera, Segunda…), no según cuántos datos tengan.
+  if (campo.clave === 'proyecto') return claves.sort((a, b) => a.localeCompare(b, 'es'))
   if (campo.tipo === 'multivalor') {
     return claves.sort((a, b) => (conteo.get(b) ?? 0) - (conteo.get(a) ?? 0) || a.localeCompare(b, 'es'))
   }
@@ -90,7 +92,7 @@ export function distribuir(filas: readonly FilaPublica[], clave: string, medida:
     respondieron++
     for (const v of vs) conteo.set(v, (conteo.get(v) ?? 0) + 1)
   }
-  const categorias = ordenar(campo, conteo).map((valor) => {
+  const categorias = ordenarCategorias(campo, conteo).map((valor) => {
     const n = conteo.get(valor) ?? 0
     return { valor, n, porcentaje: medida === 'porcentaje' && respondieron > 0 ? (n / respondieron) * 100 : null }
   })
@@ -138,7 +140,7 @@ export interface CeldaCruce {
 export function cruzar(filas: readonly FilaPublica[], claveFila: string, claveColumna: string): CeldaCruce[] {
   const cf = buscarCampo(claveFila)
   const cc = buscarCampo(claveColumna)
-  if (!cf || !cc || !esDiscreto(cf) || !esDiscreto(cc)) throw new Error('El cruce exige campos discretos')
+  if (!cf || !cc || cf.tipo === 'numerico' || !esDiscreto(cc)) throw new Error('El cruce exige un campo discreto o multivalor (filas) y uno discreto (columnas)')
   const conteo = new Map<string, number>()
   for (const f of ultimaPorBeneficiario(filas)) {
     for (const a of valoresDe(f, cf)) {
