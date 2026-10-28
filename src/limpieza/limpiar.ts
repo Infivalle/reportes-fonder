@@ -2,9 +2,9 @@ import { OPCIONES_FORMULARIO } from '../catalogo/opciones.ts'
 import { esMontoAtipico } from './atipicos.ts'
 import { normalizarCategoria } from './categorias.ts'
 import { decidirDuplicados } from './duplicados.ts'
-import { resolverMunicipio, type MotivoMunicipio } from './municipios.ts'
+import { resolverMunicipio, resolverUbicacion, type MotivoMunicipio, type OrigenMunicipio } from './municipios.ts'
 import type { RegistroAsesoria, RegistroBeneficiario } from './tipos.ts'
-import { validarTsvV1 } from './validar.ts'
+import { validarTsv } from './validar.ts'
 
 export interface AsesoriaLimpia extends RegistroAsesoria {
   conservada: boolean
@@ -15,19 +15,29 @@ export interface AsesoriaLimpia extends RegistroAsesoria {
 
 export interface BeneficiarioLimpio extends RegistroBeneficiario {
   municipioCodigo: string | null
-  municipioOrigen: 'residencia' | 'sin_ubicar'
+  municipioOrigen: OrigenMunicipio
 }
 
 export interface ResumenCarga {
-  formato: 'v1'
+  formato: 'v1' | 'v2'
   filasLeidas: number
   asesoriasConservadas: number
   asesoriasDescartadas: number
   beneficiariosDistintos: number
   /** Beneficiarios con al menos una asesoría conservada. */
   beneficiariosConAsesoria: number
-  /** Textos de ciudad que no se pudieron llevar a un municipio del Valle (para agregar alias). */
-  municipiosSinReconocer: { texto: string; motivo: MotivoMunicipio; beneficiarios: number }[]
+  /**
+   * Textos de municipio que no se pudieron llevar a un municipio del Valle (para agregar alias).
+   * En v2 `campo` dice de qué columna viene el texto; en v1 siempre es la ciudad y no se indica.
+   */
+  municipiosSinReconocer: {
+    texto: string
+    motivo: MotivoMunicipio
+    beneficiarios: number
+    campo?: 'municipioempresa' | 'ciudad'
+  }[]
+  /** Solo v2: de dónde salió el municipio de cada beneficiario. */
+  municipiosPorOrigen?: Record<OrigenMunicipio, number>
   valoresFueraDeCatalogo: { campo: string; valor: string; filas: number }[]
   montosAtipicos: number
   advertencias: string[]
@@ -59,14 +69,15 @@ const CAMPOS_CATEGORICOS = [
 ] as const satisfies readonly (readonly [keyof RegistroAsesoria, string])[]
 
 /**
- * Valida y limpia un TSV v1. Es la misma función en el navegador (vista previa) y en la
+ * Valida y limpia un TSV v1 o v2 (el formato se reconoce por el encabezado). Es la misma función en el navegador (vista previa) y en la
  * Edge Function (carga real): si se separan, los dos lados terminan dando cifras distintas.
  */
 export function limpiarTsv(contenido: string): ResultadoCarga {
-  const validacion = validarTsvV1(contenido)
+  const validacion = validarTsv(contenido)
   if (!validacion.ok) return { ok: false, errores: validacion.errores }
 
-  const advertencias: string[] = []
+  const esV2 = validacion.formato === 'v2'
+  const advertencias: string[] = [...(validacion.advertencias ?? [])]
 
   // --- Beneficiarios (una fila por beneficiario; se toma la primera aparición) ---
   const beneficiariosMap = new Map<number, RegistroBeneficiario>()
@@ -95,22 +106,53 @@ export function limpiarTsv(contenido: string): ResultadoCarga {
   }
 
   // --- Municipios ---
-  const sinReconocer = new Map<string, { motivo: MotivoMunicipio; ids: Set<number> }>()
+  // v1: ciudad de residencia. v2: municipio de la empresa y, si no sirve, la residencia.
+  const sinReconocer = new Map<
+    string,
+    { texto: string; campo?: 'municipioempresa' | 'ciudad'; motivo: MotivoMunicipio; ids: Set<number> }
+  >()
+  const anotar = (
+    id: number,
+    texto: string,
+    motivo: MotivoMunicipio,
+    campo?: 'municipioempresa' | 'ciudad',
+  ) => {
+    const clave = campo === undefined ? texto : `${campo}\u0000${texto}`
+    const entrada = sinReconocer.get(clave) ?? {
+      texto,
+      ...(campo === undefined ? {} : { campo }),
+      motivo,
+      ids: new Set<number>(),
+    }
+    entrada.ids.add(id)
+    sinReconocer.set(clave, entrada)
+  }
+  const porOrigen: Record<OrigenMunicipio, number> = { empresa: 0, residencia: 0, sin_ubicar: 0 }
+
   const beneficiarios: BeneficiarioLimpio[] = [...beneficiariosMap.values()]
     .sort((a, b) => a.id - b.id)
     .map((b) => {
-      const { codigo, motivo } = resolverMunicipio(b.ciudad, b.departamento)
-      if (codigo === null && motivo !== 'vacio') {
-        const texto = (b.ciudad ?? '').trim()
-        const entrada = sinReconocer.get(texto) ?? { motivo, ids: new Set<number>() }
-        entrada.ids.add(b.id)
-        sinReconocer.set(texto, entrada)
+      if (!esV2) {
+        const { codigo, motivo } = resolverMunicipio(b.ciudad, b.departamento)
+        if (codigo === null && motivo !== 'vacio') anotar(b.id, (b.ciudad ?? '').trim(), motivo)
+        return {
+          ...b,
+          municipioCodigo: codigo,
+          municipioOrigen: codigo === null ? ('sin_ubicar' as const) : ('residencia' as const),
+        }
       }
-      return {
-        ...b,
-        municipioCodigo: codigo,
-        municipioOrigen: codigo === null ? ('sin_ubicar' as const) : ('residencia' as const),
+
+      const u = resolverUbicacion(b.municipioEmpresa ?? null, b.ciudad, b.departamento)
+      // Un texto de empresa que no se reconoce se reporta aunque la residencia lo rescate:
+      // agregar el alias mejora la próxima carga.
+      if (u.empresa.codigo === null && u.empresa.motivo !== 'vacio') {
+        anotar(b.id, (b.municipioEmpresa ?? '').trim(), u.empresa.motivo, 'municipioempresa')
       }
+      if (u.origen === 'sin_ubicar' && u.residencia.motivo !== 'vacio') {
+        anotar(b.id, (b.ciudad ?? '').trim(), u.residencia.motivo, 'ciudad')
+      }
+      porOrigen[u.origen] += 1
+      return { ...b, municipioCodigo: u.codigo, municipioOrigen: u.origen }
     })
 
   // --- Duplicados ---
@@ -154,14 +196,19 @@ export function limpiarTsv(contenido: string): ResultadoCarga {
   const conservadas = asesorias.filter((a) => a.conservada)
 
   const resumen: ResumenCarga = {
-    formato: 'v1',
+    formato: validacion.formato,
     filasLeidas: validacion.filas.length,
     asesoriasConservadas: conservadas.length,
     asesoriasDescartadas: asesorias.length - conservadas.length,
     beneficiariosDistintos: beneficiarios.length,
     beneficiariosConAsesoria: new Set(conservadas.map((a) => a.beneficiarioId)).size,
     municipiosSinReconocer: [...sinReconocer.entries()]
-      .map(([texto, v]) => ({ texto, motivo: v.motivo, beneficiarios: v.ids.size }))
+      .map(([, v]) => ({
+        texto: v.texto,
+        motivo: v.motivo,
+        beneficiarios: v.ids.size,
+        ...(v.campo === undefined ? {} : { campo: v.campo }),
+      }))
       .sort((a, b) => b.beneficiarios - a.beneficiarios || a.texto.localeCompare(b.texto)),
     valoresFueraDeCatalogo: [...fuera.entries()]
       .map(([clave, filas]) => {
@@ -171,6 +218,7 @@ export function limpiarTsv(contenido: string): ResultadoCarga {
       .sort((a, b) => a.campo.localeCompare(b.campo) || b.filas - a.filas),
     montosAtipicos: atipicos,
     advertencias,
+    ...(esV2 ? { municipiosPorOrigen: porOrigen } : {}),
   }
 
   const proyectos = [...new Set(beneficiarios.flatMap((b) => b.proyectos))].sort()

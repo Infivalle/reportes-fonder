@@ -24,6 +24,11 @@ export const CLAVES_PROHIBIDAS: ReadonlySet<string> = new Set([
   // montos y conteos exactos (solo se publican en rangos)
   'monthly_income', 'fixed_costs', 'variable_costs', 'monthly_payment', 'emergency_reserve',
   'total_sales_value', 'monthly_clients', 'monthly_sales',
+  // formato v2 (capa privada): empresa y situación financiera de la solicitud
+  'municipio_empresa', 'municipioempresa', 'tipo_empresa', 'tipoempresa',
+  'anio_fundacion', 'aniofundacion', 'empleos_generados', 'empleosgenerado',
+  'empleos_a_generar', 'empleosagenerar', 'patrimonio', 'pasivos',
+  'dinero_solicitado', 'dinerosolicitado', 'cuotas',
 ])
 
 const CLAVES_FILA = new Set([

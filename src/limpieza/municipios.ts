@@ -69,6 +69,14 @@ const ALIAS: Record<string, string> = {
   'LA UNI N': '76400',
   'BOL VAR': '76100',
   'EL GUILA': '76243',
+  // Mismo daño en el resto de municipios con tilde. Tuluá apareció en la consulta v2; los otros
+  // cinco se agregan de una vez para no esperar a que aparezcan en una carga.
+  TULU: '76834',
+  ALCAL: '76020',
+  'ANDALUC A': '76036',
+  GUACAR: '76318',
+  JAMUND: '76364',
+  'RIOFR O': '76616',
 }
 
 const POR_NOMBRE = new Map<string, string>([
@@ -116,4 +124,35 @@ export function resolverMunicipio(
   const codigo = POR_NOMBRE.get(normalizado) ?? POR_NOMBRE.get(sinSufijoValle(normalizado))
   if (codigo === undefined) return { codigo: null, motivo: 'no_reconocido' }
   return { codigo, motivo: 'ok' }
+}
+
+export type OrigenMunicipio = 'empresa' | 'residencia' | 'sin_ubicar'
+
+export interface UbicacionBeneficiario {
+  codigo: string | null
+  origen: OrigenMunicipio
+  /** Resultado de buscar el municipio de la empresa. */
+  empresa: ResultadoMunicipio
+  /** Resultado de buscar la ciudad de residencia. */
+  residencia: ResultadoMunicipio
+}
+
+/**
+ * Formato v2: el municipio es el de la empresa; si está vacío o no es del Valle se usa la ciudad
+ * de residencia; si tampoco, queda sin ubicar.
+ *
+ * El municipio de la empresa no trae departamento, así que no se puede descartar por ese criterio:
+ * un texto como "Bolívar" se toma como el del Valle. Es razonable porque el programa es del
+ * Valle, pero es la razón por la que la residencia solo entra como respaldo.
+ */
+export function resolverUbicacion(
+  municipioEmpresa: string | null,
+  ciudad: string | null,
+  departamento: string | null,
+): UbicacionBeneficiario {
+  const empresa = resolverMunicipio(municipioEmpresa, null)
+  const residencia = resolverMunicipio(ciudad, departamento)
+  if (empresa.codigo !== null) return { codigo: empresa.codigo, origen: 'empresa', empresa, residencia }
+  if (residencia.codigo !== null) return { codigo: residencia.codigo, origen: 'residencia', empresa, residencia }
+  return { codigo: null, origen: 'sin_ubicar', empresa, residencia }
 }

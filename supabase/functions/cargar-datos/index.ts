@@ -146,7 +146,15 @@ var ALIAS = {
   // Registros de origen con la letra acentuada dañada ("�"): al normalizar, el "�" queda como espacio.
   "LA UNI N": "76400",
   "BOL VAR": "76100",
-  "EL GUILA": "76243"
+  "EL GUILA": "76243",
+  // Mismo daño en el resto de municipios con tilde. Tuluá apareció en la consulta v2; los otros
+  // cinco se agregan de una vez para no esperar a que aparezcan en una carga.
+  TULU: "76834",
+  ALCAL: "76020",
+  "ANDALUC A": "76036",
+  GUACAR: "76318",
+  JAMUND: "76364",
+  "RIOFR O": "76616"
 };
 var POR_NOMBRE = new Map([
   ...MUNICIPIOS_VALLE.map((m) => [normalizarTexto(m.nombre), m.codigo]),
@@ -168,6 +176,13 @@ function resolverMunicipio(ciudad, departamento) {
   const codigo = POR_NOMBRE.get(normalizado) ?? POR_NOMBRE.get(sinSufijoValle(normalizado));
   if (codigo === void 0) return { codigo: null, motivo: "no_reconocido" };
   return { codigo, motivo: "ok" };
+}
+function resolverUbicacion(municipioEmpresa, ciudad, departamento) {
+  const empresa = resolverMunicipio(municipioEmpresa, null);
+  const residencia = resolverMunicipio(ciudad, departamento);
+  if (empresa.codigo !== null) return { codigo: empresa.codigo, origen: "empresa", empresa, residencia };
+  if (residencia.codigo !== null) return { codigo: residencia.codigo, origen: "residencia", empresa, residencia };
+  return { codigo: null, origen: "sin_ubicar", empresa, residencia };
 }
 
 // src/formato/v1.ts
@@ -231,6 +246,21 @@ var COLUMNAS_V1 = [
 ];
 var NUM_COLUMNAS_V1 = COLUMNAS_V1.length;
 
+// src/formato/v2.ts
+var COLUMNAS_NUEVAS_V2 = [
+  "municipioempresa",
+  "tipoempresa",
+  "aniofundacion",
+  "empleosgenerado",
+  "empleosagenerar",
+  "patrimonio",
+  "pasivos",
+  "dinerosolicitado",
+  "cuotas"
+];
+var COLUMNAS_V2 = [...COLUMNAS_V1, ...COLUMNAS_NUEVAS_V2];
+var NUM_COLUMNAS_V2 = COLUMNAS_V2.length;
+
 // src/limpieza/fechas.ts
 var PATRON = /^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})$/;
 var OFFSET_COLOMBIA_MS = -5 * 60 * 60 * 1e3;
@@ -260,51 +290,68 @@ function leerTsv(contenido) {
 
 // src/limpieza/validar.ts
 var MAX_ERRORES = 30;
+var MAX_ADVERTENCIAS = 10;
 var RE_ENTERO = /^-?\d+$/;
 var RE_DECIMAL = /^-?\d+(\.\d+)?$/;
-function errorEncabezado(encabezado) {
-  const esperado = new Set(COLUMNAS_V1);
+var FORMATOS = {
+  v1: { columnas: COLUMNAS_V1, numero: NUM_COLUMNAS_V1 },
+  v2: { columnas: COLUMNAS_V2, numero: NUM_COLUMNAS_V2 }
+};
+function detectarFormato(encabezado) {
+  return COLUMNAS_NUEVAS_V2.some((c) => encabezado.includes(c)) ? "v2" : "v1";
+}
+function errorEncabezado(encabezado, formato) {
+  const columnas = FORMATOS[formato].columnas;
+  const esperado = new Set(columnas);
   const recibido = new Set(encabezado);
-  const faltan = COLUMNAS_V1.filter((c) => !recibido.has(c));
+  const faltan = columnas.filter((c) => !recibido.has(c));
   const sobran = encabezado.filter((c) => !esperado.has(c));
   const errores = [];
   if (faltan.length > 0) errores.push(`Encabezado: faltan columnas: ${faltan.join(", ")}`);
   if (sobran.length > 0) errores.push(`Encabezado: sobran columnas: ${sobran.join(", ")}`);
   if (errores.length === 0) {
-    const distinto = COLUMNAS_V1.findIndex((c, i) => encabezado[i] !== c);
+    const distinto = columnas.findIndex((c, i) => encabezado[i] !== c);
     if (distinto !== -1) {
       errores.push(
-        `Encabezado: el orden de las columnas no coincide con el formato v1 (primera diferencia en la columna ${distinto + 1}: se esperaba "${COLUMNAS_V1[distinto]}")`
+        `Encabezado: el orden de las columnas no coincide con el formato ${formato} (primera diferencia en la columna ${distinto + 1}: se esperaba "${columnas[distinto]}")`
       );
     }
   }
   return errores;
 }
-function validarTsvV1(contenido) {
+function validar(contenido, forzado) {
   const { encabezado, filas } = leerTsv(contenido);
   if (encabezado.length === 0 || encabezado.length === 1 && encabezado[0] === "") {
     return { ok: false, errores: ["El archivo est\xE1 vac\xEDo"] };
   }
-  const errHeader = errorEncabezado(encabezado);
+  const formato = forzado ?? detectarFormato(encabezado);
+  const { columnas, numero } = FORMATOS[formato];
+  const errHeader = errorEncabezado(encabezado, formato);
   if (errHeader.length > 0) return { ok: false, errores: errHeader };
   const errores = [];
   let malas = 0;
   filas.forEach((fila, i) => {
-    if (fila.length !== NUM_COLUMNAS_V1) {
+    if (fila.length !== numero) {
       malas++;
       if (errores.length < MAX_ERRORES) {
-        errores.push(`L\xEDnea ${i + 2}: tiene ${fila.length} columnas, se esperaban ${NUM_COLUMNAS_V1}`);
+        errores.push(`L\xEDnea ${i + 2}: tiene ${fila.length} columnas, se esperaban ${numero}`);
       }
     }
   });
   if (malas > MAX_ERRORES) errores.push(`\u2026 y ${malas - MAX_ERRORES} l\xEDneas m\xE1s con n\xFAmero de columnas incorrecto`);
   if (malas > 0) return { ok: false, errores };
-  const indice = new Map(COLUMNAS_V1.map((c, i) => [c, i]));
+  const indice = new Map(columnas.map((c, i) => [c, i]));
   const validadas = [];
+  const advertencias = [];
   let total = 0;
+  let totalAdvertencias = 0;
   const registrar = (linea, mensaje) => {
     total++;
     if (errores.length < MAX_ERRORES) errores.push(`L\xEDnea ${linea}: ${mensaje}`);
+  };
+  const advertir = (linea, mensaje) => {
+    totalAdvertencias++;
+    if (advertencias.length < MAX_ADVERTENCIAS) advertencias.push(`L\xEDnea ${linea}: ${mensaje}`);
   };
   filas.forEach((fila, i) => {
     const linea = i + 2;
@@ -361,6 +408,25 @@ function validarTsvV1(contenido) {
       }
       return iso;
     };
+    const decimalSuave = (col) => {
+      const v = texto(col);
+      if (v === null) return null;
+      if (!RE_DECIMAL.test(v) || !Number.isFinite(Number(v))) {
+        advertir(linea, `${col} no es un n\xFAmero; se deja vac\xEDo (valor: "${v}")`);
+        return null;
+      }
+      return Number(v);
+    };
+    const enteroSuave = (col, min, max) => {
+      const n = decimalSuave(col);
+      if (n === null) return null;
+      const v = texto(col);
+      if (!Number.isSafeInteger(n) || min !== void 0 && n < min || max !== void 0 && n > max) {
+        advertir(linea, `${col} no es un entero v\xE1lido; se deja vac\xEDo (valor: "${v}")`);
+        return null;
+      }
+      return n;
+    };
     const id = entero("id", true);
     const beneficiarioId = entero("idbeneficiario", true);
     const creadaEn = fecha("created_at", true);
@@ -415,7 +481,19 @@ function validarTsvV1(contenido) {
       nombreEmpresa: texto("nombreempresa"),
       nit: texto("nit"),
       actividadEconomica: texto("actividadeconomica"),
-      proyectos: proyectosTexto === null ? [] : [...new Set(proyectosTexto.split("|").map((p) => p.trim()).filter((p) => p !== ""))]
+      proyectos: proyectosTexto === null ? [] : [...new Set(proyectosTexto.split("|").map((p) => p.trim()).filter((p) => p !== ""))],
+      // En v1 estas claves no existen (no se agregan ni como null).
+      ...formato === "v2" ? {
+        municipioEmpresa: texto("municipioempresa"),
+        tipoEmpresa: texto("tipoempresa"),
+        anioFundacion: enteroSuave("aniofundacion", 1800, 2100),
+        empleosGenerados: enteroSuave("empleosgenerado", 0),
+        empleosAGenerar: enteroSuave("empleosagenerar", 0),
+        patrimonio: decimalSuave("patrimonio"),
+        pasivos: decimalSuave("pasivos"),
+        dineroSolicitado: decimalSuave("dinerosolicitado"),
+        cuotas: decimalSuave("cuotas")
+      } : {}
     };
     if (ok && id !== null && beneficiarioId !== null && creadaEn !== null && documento !== null) {
       validadas.push({
@@ -436,7 +514,13 @@ function validarTsvV1(contenido) {
     }
     vistos.add(f.asesoria.id);
   }
-  return { ok: true, formato: "v1", filas: validadas };
+  if (totalAdvertencias > MAX_ADVERTENCIAS) {
+    advertencias.push(`\u2026 y ${totalAdvertencias - MAX_ADVERTENCIAS} advertencias m\xE1s sobre las columnas de v2`);
+  }
+  return { ok: true, formato, filas: validadas, ...advertencias.length > 0 ? { advertencias } : {} };
+}
+function validarTsv(contenido) {
+  return validar(contenido, null);
 }
 
 // src/limpieza/limpiar.ts
@@ -452,9 +536,10 @@ var CAMPOS_CATEGORICOS = [
   ["resourceManager", "resourcemanager"]
 ];
 function limpiarTsv(contenido) {
-  const validacion = validarTsvV1(contenido);
+  const validacion = validarTsv(contenido);
   if (!validacion.ok) return { ok: false, errores: validacion.errores };
-  const advertencias = [];
+  const esV2 = validacion.formato === "v2";
+  const advertencias = [...validacion.advertencias ?? []];
   const beneficiariosMap = /* @__PURE__ */ new Map();
   for (const { linea, beneficiario } of validacion.filas) {
     const previo = beneficiariosMap.get(beneficiario.id);
@@ -478,19 +563,37 @@ function limpiarTsv(contenido) {
     porDocumento.set(b.documento, b.id);
   }
   const sinReconocer = /* @__PURE__ */ new Map();
-  const beneficiarios = [...beneficiariosMap.values()].sort((a, b) => a.id - b.id).map((b) => {
-    const { codigo, motivo } = resolverMunicipio(b.ciudad, b.departamento);
-    if (codigo === null && motivo !== "vacio") {
-      const texto = (b.ciudad ?? "").trim();
-      const entrada = sinReconocer.get(texto) ?? { motivo, ids: /* @__PURE__ */ new Set() };
-      entrada.ids.add(b.id);
-      sinReconocer.set(texto, entrada);
-    }
-    return {
-      ...b,
-      municipioCodigo: codigo,
-      municipioOrigen: codigo === null ? "sin_ubicar" : "residencia"
+  const anotar = (id, texto, motivo, campo) => {
+    const clave = campo === void 0 ? texto : `${campo}\0${texto}`;
+    const entrada = sinReconocer.get(clave) ?? {
+      texto,
+      ...campo === void 0 ? {} : { campo },
+      motivo,
+      ids: /* @__PURE__ */ new Set()
     };
+    entrada.ids.add(id);
+    sinReconocer.set(clave, entrada);
+  };
+  const porOrigen = { empresa: 0, residencia: 0, sin_ubicar: 0 };
+  const beneficiarios = [...beneficiariosMap.values()].sort((a, b) => a.id - b.id).map((b) => {
+    if (!esV2) {
+      const { codigo, motivo } = resolverMunicipio(b.ciudad, b.departamento);
+      if (codigo === null && motivo !== "vacio") anotar(b.id, (b.ciudad ?? "").trim(), motivo);
+      return {
+        ...b,
+        municipioCodigo: codigo,
+        municipioOrigen: codigo === null ? "sin_ubicar" : "residencia"
+      };
+    }
+    const u = resolverUbicacion(b.municipioEmpresa ?? null, b.ciudad, b.departamento);
+    if (u.empresa.codigo === null && u.empresa.motivo !== "vacio") {
+      anotar(b.id, (b.municipioEmpresa ?? "").trim(), u.empresa.motivo, "municipioempresa");
+    }
+    if (u.origen === "sin_ubicar" && u.residencia.motivo !== "vacio") {
+      anotar(b.id, (b.ciudad ?? "").trim(), u.residencia.motivo, "ciudad");
+    }
+    porOrigen[u.origen] += 1;
+    return { ...b, municipioCodigo: u.codigo, municipioOrigen: u.origen };
   });
   const decisiones = decidirDuplicados(
     validacion.filas.map(({ asesoria: a }) => ({
@@ -524,19 +627,25 @@ function limpiarTsv(contenido) {
   }).sort((a, b) => a.id - b.id);
   const conservadas = asesorias.filter((a) => a.conservada);
   const resumen = {
-    formato: "v1",
+    formato: validacion.formato,
     filasLeidas: validacion.filas.length,
     asesoriasConservadas: conservadas.length,
     asesoriasDescartadas: asesorias.length - conservadas.length,
     beneficiariosDistintos: beneficiarios.length,
     beneficiariosConAsesoria: new Set(conservadas.map((a) => a.beneficiarioId)).size,
-    municipiosSinReconocer: [...sinReconocer.entries()].map(([texto, v]) => ({ texto, motivo: v.motivo, beneficiarios: v.ids.size })).sort((a, b) => b.beneficiarios - a.beneficiarios || a.texto.localeCompare(b.texto)),
+    municipiosSinReconocer: [...sinReconocer.entries()].map(([, v]) => ({
+      texto: v.texto,
+      motivo: v.motivo,
+      beneficiarios: v.ids.size,
+      ...v.campo === void 0 ? {} : { campo: v.campo }
+    })).sort((a, b) => b.beneficiarios - a.beneficiarios || a.texto.localeCompare(b.texto)),
     valoresFueraDeCatalogo: [...fuera.entries()].map(([clave, filas]) => {
       const [campo = "", valor = ""] = clave.split("\0");
       return { campo, valor, filas };
     }).sort((a, b) => a.campo.localeCompare(b.campo) || b.filas - a.filas),
     montosAtipicos: atipicos,
-    advertencias
+    advertencias,
+    ...esV2 ? { municipiosPorOrigen: porOrigen } : {}
   };
   const proyectos = [...new Set(beneficiarios.flatMap((b) => b.proyectos))].sort();
   return { ok: true, resultado: { resumen, proyectos, beneficiarios, asesorias } };
@@ -568,7 +677,19 @@ function construirPayloadDb(resultado, archivo) {
       nit: b.nit,
       actividad_economica: b.actividadEconomica,
       municipio_codigo: b.municipioCodigo,
-      municipio_origen: b.municipioOrigen
+      municipio_origen: b.municipioOrigen,
+      // Solo v2. En v1 estas claves no se envían: las columnas quedan vacías en la base.
+      ...resumen.formato === "v2" ? {
+        municipio_empresa: b.municipioEmpresa ?? null,
+        tipo_empresa: b.tipoEmpresa ?? null,
+        anio_fundacion: b.anioFundacion ?? null,
+        empleos_generados: b.empleosGenerados ?? null,
+        empleos_a_generar: b.empleosAGenerar ?? null,
+        patrimonio: b.patrimonio ?? null,
+        pasivos: b.pasivos ?? null,
+        dinero_solicitado: b.dineroSolicitado ?? null,
+        cuotas: b.cuotas ?? null
+      } : {}
     })),
     beneficiarios_proyecto: beneficiarios.flatMap(
       (b) => b.proyectos.map((proyecto) => ({ beneficiario_id: b.id, proyecto }))

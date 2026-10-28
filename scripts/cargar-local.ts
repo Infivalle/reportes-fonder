@@ -18,12 +18,16 @@ import { basename } from 'node:path'
 import { createInterface } from 'node:readline/promises'
 
 interface Resumen {
+  /** 'v1' (52 columnas) o 'v2' (61). */
+  formato?: string
   filasLeidas: number
   asesoriasConservadas: number
   asesoriasDescartadas: number
   beneficiariosDistintos: number
   beneficiariosConAsesoria: number
-  municipiosSinReconocer: { texto: string; motivo: string; beneficiarios: number }[]
+  municipiosSinReconocer: { texto: string; motivo: string; beneficiarios: number; campo?: string }[]
+  /** Solo v2: de dónde salió el municipio de cada beneficiario. */
+  municipiosPorOrigen?: { empresa: number; residencia: number; sin_ubicar: number }
   valoresFueraDeCatalogo: { campo: string; valor: string; filas: number }[]
   montosAtipicos: number
   advertencias: string[]
@@ -74,16 +78,22 @@ function preguntarOculto(texto: string): Promise<string> {
 
 function imprimirResumen(r: Resumen) {
   console.log('\nResumen')
+  console.log(`  Formato del archivo:        ${r.formato ?? 'v1'}`)
   console.log(`  Filas leídas:               ${r.filasLeidas}`)
   console.log(`  Asesorías conservadas:      ${r.asesoriasConservadas}`)
   console.log(`  Descartadas por duplicado:  ${r.asesoriasDescartadas}`)
   console.log(`  Beneficiarios distintos:    ${r.beneficiariosDistintos}`)
   console.log(`  Montos atípicos marcados:   ${r.montosAtipicos}`)
+  if (r.municipiosPorOrigen) {
+    const o = r.municipiosPorOrigen
+    console.log(`  Municipio según:            empresa ${o.empresa} · residencia ${o.residencia} · sin ubicar ${o.sin_ubicar}`)
+  }
 
   if (r.municipiosSinReconocer.length > 0) {
     console.log('\n  Municipios sin reconocer (agregar alias en src/limpieza/municipios.ts si son del Valle):')
     for (const m of r.municipiosSinReconocer) {
-      console.log(`    - "${m.texto}" (${m.motivo}, ${m.beneficiarios} beneficiario/s)`)
+      const columna = m.campo === undefined ? '' : `columna ${m.campo}, `
+      console.log(`    - "${m.texto}" (${columna}${m.motivo}, ${m.beneficiarios} beneficiario/s)`)
     }
   }
   if (r.valoresFueraDeCatalogo.length > 0) {

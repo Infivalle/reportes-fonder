@@ -49,6 +49,20 @@ export function construirPayloadDb(resultado: ResultadoLimpieza, archivo: string
       actividad_economica: b.actividadEconomica,
       municipio_codigo: b.municipioCodigo,
       municipio_origen: b.municipioOrigen,
+      // Solo v2. En v1 estas claves no se envían: las columnas quedan vacías en la base.
+      ...(resumen.formato === 'v2'
+        ? {
+            municipio_empresa: b.municipioEmpresa ?? null,
+            tipo_empresa: b.tipoEmpresa ?? null,
+            anio_fundacion: b.anioFundacion ?? null,
+            empleos_generados: b.empleosGenerados ?? null,
+            empleos_a_generar: b.empleosAGenerar ?? null,
+            patrimonio: b.patrimonio ?? null,
+            pasivos: b.pasivos ?? null,
+            dinero_solicitado: b.dineroSolicitado ?? null,
+            cuotas: b.cuotas ?? null,
+          }
+        : {}),
     })),
     beneficiarios_proyecto: beneficiarios.flatMap((b) =>
       b.proyectos.map((proyecto) => ({ beneficiario_id: b.id, proyecto })),

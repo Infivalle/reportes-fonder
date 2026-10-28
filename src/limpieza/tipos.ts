@@ -1,4 +1,4 @@
-/** Una asesoría tal como queda tras validar y convertir los tipos del TSV v1. */
+/** Una asesoría tal como queda tras validar y convertir los tipos del TSV (v1 o v2). */
 export interface RegistroAsesoria {
   id: number
   beneficiarioId: number
@@ -52,6 +52,18 @@ export interface RegistroBeneficiario {
   nit: string | null
   actividadEconomica: string | null
   proyectos: string[]
+  // --- Solo formato v2 (en v1 estas claves no existen) ---
+  /** Municipio de la empresa, texto original. */
+  municipioEmpresa?: string | null
+  tipoEmpresa?: string | null
+  anioFundacion?: number | null
+  empleosGenerados?: number | null
+  empleosAGenerar?: number | null
+  /** Situación financiera de la solicitud: dato personal, solo capa privada. */
+  patrimonio?: number | null
+  pasivos?: number | null
+  dineroSolicitado?: number | null
+  cuotas?: number | null
 }
 
 export interface FilaValidada {
@@ -62,5 +74,11 @@ export interface FilaValidada {
 }
 
 export type ResultadoValidacion =
-  | { ok: true; formato: 'v1'; filas: FilaValidada[] }
+  | {
+      ok: true
+      formato: 'v1' | 'v2'
+      filas: FilaValidada[]
+      /** Valores de v2 que no se pudieron leer y quedaron vacíos (no rechazan el archivo). */
+      advertencias?: string[]
+    }
   | { ok: false; errores: string[] }

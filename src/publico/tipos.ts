@@ -59,6 +59,8 @@ export interface FilaMetaVista {
   asesorias_conservadas: string | number
   asesorias_descartadas: string | number
   beneficiarios_con_asesoria: string | number
+  /** Formato del último TSV cargado ('v1' | 'v2'). Opcional por compatibilidad con cargas y pruebas anteriores. */
+  ultimo_formato?: string | null
 }
 
 /** Fila pública: sin ids de base; id y beneficiario son aleatorios y cambian en cada generación. */

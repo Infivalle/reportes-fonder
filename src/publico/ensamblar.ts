@@ -105,7 +105,8 @@ export function ensamblarPublico(
     version: 1,
     generado_en: opciones.generadoEn,
     fecha_corte: corte === null ? null : new Date(corte).toISOString(),
-    fuente_municipio: 'residencia',
+    // v2 usa el municipio de la empresa (con la residencia de respaldo); v1, la residencia.
+    fuente_municipio: meta?.ultimo_formato === 'v2' ? 'empresa' : 'residencia',
     totales: {
       asesorias_conservadas: Number(meta?.asesorias_conservadas ?? 0),
       asesorias_descartadas: Number(meta?.asesorias_descartadas ?? 0),
