@@ -4,10 +4,17 @@ import { MEJORAS } from '../catalogo/codigos'
 import { MUNICIPIOS_VALLE } from '../limpieza/municipios'
 import { claveProyecto } from './proyectos'
 
-/** Filtros globales. En F2 se agregan municipio y mes; el proyecto va primero. */
+/**
+ * Filtros globales. Todos son de selección única; null (o ausente) = sin filtro.
+ * Municipio y mes son opcionales para no romper a quien solo filtra por proyecto.
+ */
 export interface Filtros {
   /** Clave de proyecto (ver claveProyecto) o null para todos. */
   proyecto: string | null
+  /** Código DIVIPOLA de 5 dígitos. */
+  municipio?: string | null
+  /** Mes de la asesoría, "AAAA-MM". */
+  mes?: string | null
 }
 
 export const SIN_FILTROS: Filtros = { proyecto: null }
@@ -39,6 +46,8 @@ export interface IndicadorCobertura {
   porcentaje: number | null
   /** Hay más atendidos que el total cargado: el denominador está desactualizado. */
   inconsistente: boolean
+  /** Con filtro de municipio no hay denominador (solo existe por convocatoria): total = null. */
+  porMunicipio: boolean
 }
 
 export interface IndicadorMunicipios {
@@ -84,9 +93,15 @@ export function mediana(valores: readonly number[]): number | null {
   return orden.length % 2 === 1 ? orden[medio]! : (orden[medio - 1]! + orden[medio]!) / 2
 }
 
-/** Aplica los filtros globales. */
+/** Aplica los filtros globales (todos a la vez). */
 export function aplicarFiltros(filas: readonly FilaPublica[], filtros: Filtros): FilaPublica[] {
-  return filas.filter((f) => filtros.proyecto === null || claveProyecto(f.proyecto) === filtros.proyecto)
+  const { proyecto, municipio = null, mes = null } = filtros
+  return filas.filter(
+    (f) =>
+      (proyecto === null || claveProyecto(f.proyecto) === proyecto) &&
+      (municipio === null || f.municipio_codigo === municipio) &&
+      (mes === null || f.mes === mes),
+  )
 }
 
 /**
@@ -242,16 +257,22 @@ export function calcularIndicadores(publico: PublicoJson, filtros: Filtros): Res
   const porBeneficiario = ultimaPorBeneficiario(filas)
 
   const atendidos = porBeneficiario.length
-  const total = denominadorCobertura(
-    publico.denominadores,
-    // Con filtro se busca su denominador aunque aún no tenga asesorías ("0 de 1.300").
-    filtros.proyecto === null ? filas.map((f) => f.proyecto) : [filtros.proyecto],
-  )
+  // El total de beneficiarios solo se carga por convocatoria: con un municipio filtrado
+  // no hay denominador y se muestra "Sin dato" (mejor que un porcentaje inventado).
+  const porMunicipio = (filtros.municipio ?? null) !== null
+  const total = porMunicipio
+    ? null
+    : denominadorCobertura(
+        publico.denominadores,
+        // Con filtro se busca su denominador aunque aún no tenga asesorías ("0 de 1.300").
+        filtros.proyecto === null ? filas.map((f) => f.proyecto) : [filtros.proyecto],
+      )
   const cobertura: IndicadorCobertura = {
     atendidos,
     total,
     porcentaje: total === null ? null : porcentaje(atendidos, total),
     inconsistente: total !== null && atendidos > total,
+    porMunicipio,
   }
 
   const satisfaccion = proporcion(

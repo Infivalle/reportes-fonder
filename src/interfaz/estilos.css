@@ -340,3 +340,86 @@ html body {
   background: var(--tono, var(--f-acento));
   border-radius: 6px;
 }
+
+/* Navegación entre secciones: pestañas bajo el encabezado */
+.navegacion {
+  background: var(--f-cabecera);
+  border-bottom: 1px solid var(--f-borde);
+}
+
+.navegacion__lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
+  list-style: none;
+}
+
+/* El texto de la primera pestaña se alinea con el borde del contenido (la pestaña sobresale 16 px). */
+.navegacion__lista li:first-child {
+  margin-left: -16px;
+}
+
+.navegacion__enlace {
+  display: inline-block;
+  min-height: 44px;
+  padding: 10px 16px;
+  box-sizing: border-box; /* el alto mínimo de 44 px incluye el relleno y la línea inferior */
+  font-weight: 600;
+  color: var(--f-acento);
+  text-decoration: none;
+  border-bottom: 3px solid transparent;
+}
+
+.navegacion__enlace:hover {
+  background: color-mix(in srgb, var(--f-acento) 8%, transparent);
+}
+
+.navegacion__enlace--activo {
+  border-bottom-color: var(--f-acento);
+}
+
+.navegacion__enlace:focus-visible {
+  outline: 3px solid var(--f-acento);
+  outline-offset: -3px;
+}
+
+/* Filtros globales */
+.contenido {
+  display: block;
+}
+
+.barra-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  align-items: flex-end;
+  max-width: 1200px;
+  margin: 0 auto;
+  /* Sin box-sizing propio: mide igual que .indicadores y queda alineada con él. */
+  padding: 16px 16px 0;
+}
+
+.barra-filtros .filtro {
+  flex: 1 1 200px;
+  min-width: min(100%, 200px);
+}
+
+.barra-filtros__limpiar {
+  min-height: 44px;
+  padding: 0 16px;
+  font: inherit;
+  font-weight: 600;
+  color: var(--f-acento);
+  background: transparent;
+  border: 1px solid var(--f-acento);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.barra-filtros__limpiar:focus-visible {
+  outline: 3px solid var(--f-acento);
+  outline-offset: 2px;
+}

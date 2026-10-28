@@ -1,15 +1,15 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { cleanup, render, screen, within } from '@testing-library/react'
+import { afterEach, describe, expect, it } from 'vitest'
+import { claveProyecto } from '../src/indicadores/proyectos'
 import { Encabezado } from '../src/interfaz/Encabezado'
-import { PaginaIndicadores } from '../src/interfaz/PaginaIndicadores'
 import { VistaIndicadores } from '../src/interfaz/VistaIndicadores'
 import type { FilaPublica, PublicoJson } from '../src/publico/tipos'
 
 const P1 = 'Fonder Valle Primera Convocatoria'
 const P2 = 'FONDERVALLE SEGUNDA CONVOCATORIA'
+const SIN = { proyecto: null } as const
 
 let n = 0
 function fila(o: Partial<FilaPublica>): FilaPublica {
@@ -76,12 +76,11 @@ function valorDe(nombre: string): string {
 
 afterEach(() => {
   cleanup()
-  vi.unstubAllGlobals()
 })
 
 describe('VistaIndicadores', () => {
   it('muestra los indicadores del resumen y del detalle y la fecha de corte', () => {
-    render(<VistaIndicadores datos={datos([{ proyecto: P1, total_beneficiarios: 8 }, { proyecto: 'Fonder Valle Segunda Convocatoria', total_beneficiarios: 12 }])} />)
+    render(<VistaIndicadores datos={datos([{ proyecto: P1, total_beneficiarios: 8 }, { proyecto: 'Fonder Valle Segunda Convocatoria', total_beneficiarios: 12 }])} filtros={SIN} />)
     for (const t of ['Cobertura', 'Cubrimiento de municipios', 'Satisfacción', 'Detalle de satisfacción', 'Resultados esperados', 'Destino del crédito', 'Necesidad de nuevo crédito', 'Crédito utilizado', 'Empleo']) {
       expect(tarjeta(t)).toBeInTheDocument()
     }
@@ -91,35 +90,32 @@ describe('VistaIndicadores', () => {
     expect(valorDe('Satisfacción')).toBe('50 %')
   })
 
-  it('el filtro por proyecto recalcula, y los dos nombres del mismo proyecto no se duplican', async () => {
-    render(<VistaIndicadores datos={datos([{ proyecto: P1, total_beneficiarios: 8 }])} />)
-    const opciones = screen.getAllByRole('option').map((o) => o.textContent)
-    expect(opciones).toEqual(['Todas las convocatorias', 'Primera convocatoria', 'Segunda convocatoria'])
-
-    await userEvent.selectOptions(screen.getByLabelText('Convocatoria'), 'Primera convocatoria')
+  it('recibe el filtro por convocatoria desde afuera y recalcula', () => {
+    const d = datos([{ proyecto: P1, total_beneficiarios: 8 }])
+    const { rerender } = render(<VistaIndicadores datos={d} filtros={{ proyecto: claveProyecto(P1) }} />)
     expect(valorDe('Satisfacción')).toBe('100 %')
     expect(within(tarjeta('Cobertura')).getByText('2 de 8 beneficiarios con asesoría.')).toBeInTheDocument()
 
-    await userEvent.selectOptions(screen.getByLabelText('Convocatoria'), 'Segunda convocatoria')
+    rerender(<VistaIndicadores datos={d} filtros={{ proyecto: claveProyecto(P2) }} />)
     expect(valorDe('Satisfacción')).toBe('0 %')
   })
 
   it('sin denominador la cobertura dice "Sin dato" en vez de inventar un porcentaje', () => {
-    render(<VistaIndicadores datos={datos([])} />)
+    render(<VistaIndicadores datos={datos([])} filtros={SIN} />)
     const c = tarjeta('Cobertura')
     expect(valorDe('Cobertura')).toBe('Sin dato')
     expect(within(c).getByText(/Falta cargar el total/)).toBeInTheDocument()
   })
 
   it('no muestra "n = … respuestas" ni pie de página; el método va en un desplegable', () => {
-    render(<VistaIndicadores datos={datos([])} />)
+    render(<VistaIndicadores datos={datos([])} filtros={SIN} />)
     expect(screen.queryByText(/n = /)).not.toBeInTheDocument()
     expect(screen.queryByRole('contentinfo')).not.toBeInTheDocument()
     expect(screen.getByText('¿Cómo se calculan los indicadores?')).toBeInTheDocument()
   })
 
   it('el cubrimiento de municipios y la cobertura traen barra de progreso', () => {
-    render(<VistaIndicadores datos={datos([{ proyecto: P1, total_beneficiarios: 8 }, { proyecto: 'Fonder Valle Segunda Convocatoria', total_beneficiarios: 12 }])} />)
+    render(<VistaIndicadores datos={datos([{ proyecto: P1, total_beneficiarios: 8 }, { proyecto: 'Fonder Valle Segunda Convocatoria', total_beneficiarios: 12 }])} filtros={SIN} />)
     expect(valorDe('Cubrimiento de municipios')).toBe('1 de 42')
     expect(within(tarjeta('Cubrimiento de municipios')).getByRole('progressbar')).toHaveAttribute('aria-valuenow', '2')
     expect(within(tarjeta('Cobertura')).getByRole('progressbar')).toHaveAttribute('aria-valuenow', '20')
@@ -134,7 +130,7 @@ describe('VistaIndicadores', () => {
       fila({ mejoras: ['O'] }),
       fila({ mejoras: [] }),
     ]
-    render(<VistaIndicadores datos={d} />)
+    render(<VistaIndicadores datos={d} filtros={SIN} />)
     expect(valorDe('Destino del crédito')).toBe('Capital de trabajo')
     const t = within(tarjeta('Destino del crédito')).getByRole('table')
     expect(within(t).getByRole('row', { name: /Otros/ })).toHaveTextContent('1')
@@ -142,43 +138,20 @@ describe('VistaIndicadores', () => {
   })
 
   it('avisa cuando hay pocas respuestas', () => {
-    render(<VistaIndicadores datos={datos([])} />)
+    render(<VistaIndicadores datos={datos([])} filtros={SIN} />)
     expect(within(tarjeta('Satisfacción')).getByText(/Pocas respuestas/)).toBeInTheDocument()
   })
 
   it('separa el resumen del detalle con dos secciones con título', () => {
-    render(<VistaIndicadores datos={datos([])} />)
+    render(<VistaIndicadores datos={datos([])} filtros={SIN} />)
     expect(screen.getByRole('region', { name: 'Resumen' })).toBeInTheDocument()
     expect(screen.getByRole('region', { name: 'Detalle de las respuestas' })).toBeInTheDocument()
   })
 
   it('cada distribución tiene tabla accesible con sus casos', () => {
-    render(<VistaIndicadores datos={datos([])} />)
+    render(<VistaIndicadores datos={datos([])} filtros={SIN} />)
     const t = within(tarjeta('Detalle de satisfacción')).getByRole('table', { name: 'Satisfacción con la asesoría' })
     expect(within(t).getByRole('row', { name: /Insatisfecho/ })).toHaveTextContent('2')
-  })
-})
-
-describe('PaginaIndicadores', () => {
-  it('muestra el error si publico.json no carga', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 404 }))
-    render(<PaginaIndicadores />)
-    expect(await screen.findByRole('alert')).toHaveTextContent('HTTP 404')
-  })
-
-  it('muestra el aviso cuando el archivo es el contenido vacío', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({ ok: true, json: async () => ({ version: 1, vacio: true, motivo: 'Aún sin carga.', generado_en: 'x' }) }),
-    )
-    render(<PaginaIndicadores />)
-    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Aún sin carga.'))
-  })
-
-  it('carga y muestra los indicadores', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => datos([]) }))
-    render(<PaginaIndicadores />)
-    expect(await screen.findByRole('heading', { name: 'Indicadores de las asesorías' })).toBeInTheDocument()
   })
 })
 

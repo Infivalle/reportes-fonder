@@ -1,11 +1,7 @@
-import { PaginaIndicadores } from './interfaz/PaginaIndicadores'
-import { Encabezado } from './interfaz/Encabezado'
+import { Aplicacion } from './interfaz/Aplicacion'
 
-export default function App() {
-  return (
-    <main className="app">
-      <Encabezado />
-      <PaginaIndicadores />
-    </main>
-  )
+export function App() {
+  return <Aplicacion />
 }
+
+export default App

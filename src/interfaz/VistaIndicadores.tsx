@@ -1,29 +1,18 @@
-import { useId, useMemo, useState } from 'react'
-import { calcularIndicadores } from '../indicadores/calcular'
+import { useMemo } from 'react'
+import { calcularIndicadores, type Filtros } from '../indicadores/calcular'
 import { formatoEntero, formatoFecha, formatoPorcentaje } from '../indicadores/formato'
-import { listarProyectos } from '../indicadores/proyectos'
 import type { PublicoJson } from '../publico/tipos'
 import './estilos.css'
 import { Progreso, Tarjeta, TablaDistribucion } from './Tarjeta'
 
 interface Props {
   datos: PublicoJson
+  /** Filtros globales (convocatoria, municipio, mes); los elige la barra de filtros del sitio. */
+  filtros: Filtros
 }
 
-const TODOS = '__todos__'
-
-export function VistaIndicadores({ datos }: Props) {
-  const idFiltro = useId()
-  const [seleccion, setSeleccion] = useState<string>(TODOS)
-
-  const proyectos = useMemo(
-    () => listarProyectos([...datos.asesorias.map((a) => a.proyecto), ...datos.denominadores.map((d) => d.proyecto)]),
-    [datos],
-  )
-  const r = useMemo(
-    () => calcularIndicadores(datos, { proyecto: seleccion === TODOS ? null : seleccion }),
-    [datos, seleccion],
-  )
+export function VistaIndicadores({ datos, filtros }: Props) {
+  const r = useMemo(() => calcularIndicadores(datos, filtros), [datos, filtros])
   const fecha = formatoFecha(datos.fecha_corte)
   const c = r.cobertura
   const m = r.municipios
@@ -49,17 +38,6 @@ export function VistaIndicadores({ datos }: Props) {
             {formatoEntero(r.beneficiarios)} beneficiarios con asesoría · {formatoEntero(r.asesorias)} asesorías.
           </p>
         </div>
-        <div className="filtro">
-          <label htmlFor={idFiltro}>Convocatoria</label>
-          <select id={idFiltro} value={seleccion} onChange={(e) => setSeleccion(e.target.value)}>
-            <option value={TODOS}>Todas las convocatorias</option>
-            {proyectos.map((p) => (
-              <option key={p.clave} value={p.clave}>
-                {p.etiqueta}
-              </option>
-            ))}
-          </select>
-        </div>
       </header>
 
       {r.asesorias === 0 && (
@@ -79,9 +57,11 @@ export function VistaIndicadores({ datos }: Props) {
             titulo="Cobertura"
             valor={c.total === null ? 'Sin dato' : formatoPorcentaje(c.porcentaje)}
             descripcion={
-              c.total === null
-                ? `${formatoEntero(c.atendidos)} beneficiarios atendidos. Falta cargar el total de beneficiarios de la convocatoria.`
-                : `${formatoEntero(c.atendidos)} de ${formatoEntero(c.total)} beneficiarios con asesoría.`
+              c.total !== null
+                ? `${formatoEntero(c.atendidos)} de ${formatoEntero(c.total)} beneficiarios con asesoría.`
+                : c.porMunicipio
+                  ? `${formatoEntero(c.atendidos)} beneficiarios atendidos. El total de beneficiarios solo está disponible por convocatoria, no por municipio.`
+                  : `${formatoEntero(c.atendidos)} beneficiarios atendidos. Falta cargar el total de beneficiarios de la convocatoria.`
             }
             n={null}
           >
