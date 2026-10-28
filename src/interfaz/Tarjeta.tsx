@@ -23,9 +23,7 @@ export function Tarjeta({ titulo, valor, descripcion, n, children }: PropsTarjet
       <h3 className="tarjeta__titulo">{titulo}</h3>
       <p className="tarjeta__valor">{valor}</p>
       <p className="tarjeta__descripcion">{descripcion}</p>
-      {n !== null && (
-        <p className="tarjeta__n">{n === 0 ? 'Sin respuestas' : `n = ${formatoEntero(n)} respuestas`}</p>
-      )}
+      {n === 0 && <p className="tarjeta__n">Sin respuestas</p>}
       {pocas && (
         <p className="tarjeta__aviso" role="note">
           Pocas respuestas: interprete la cifra con cautela.
@@ -33,6 +31,31 @@ export function Tarjeta({ titulo, valor, descripcion, n, children }: PropsTarjet
       )}
       {children}
     </article>
+  )
+}
+
+interface PropsProgreso {
+  /** 0 a 100; null = sin dato (no se dibuja). */
+  porcentaje: number | null
+  /** Texto para lectores de pantalla, p. ej. "Cobertura". */
+  etiqueta: string
+}
+
+/** Barra de progreso accesible (role="progressbar"). */
+export function Progreso({ porcentaje, etiqueta }: PropsProgreso) {
+  if (porcentaje === null) return null
+  const valor = Math.max(0, Math.min(100, porcentaje))
+  return (
+    <div
+      className="progreso"
+      role="progressbar"
+      aria-label={etiqueta}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={Math.round(valor)}
+    >
+      <span className="progreso__relleno" style={{ width: `${valor}%` }} />
+    </div>
   )
 }
 

@@ -1,4 +1,3 @@
-/* Vista de indicadores. Contraste AA sobre fondo blanco; tema claro y oscuro. */
 /* Vista de indicadores. Siempre en tema claro: azul oscuro sobre blanco, contraste AA. */
 :root {
   color-scheme: light;
@@ -49,15 +48,31 @@ html body {
   font-size: 1.5rem;
 }
 
-.indicadores__meta,
-.indicadores__notas {
+.indicadores__meta {
   margin: 0;
   color: var(--f-suave);
   font-size: 0.9rem;
 }
 
-.indicadores__notas {
+.metodo {
   margin-top: 24px;
+  color: var(--f-suave);
+  font-size: 0.9rem;
+}
+
+.metodo summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--f-acento);
+}
+
+.metodo summary:focus-visible {
+  outline: 3px solid var(--f-acento);
+  outline-offset: 2px;
+}
+
+.metodo p {
+  margin: 8px 0 0;
 }
 
 .indicadores__vacio {
@@ -197,10 +212,62 @@ html body {
   }
 }
 
-.app__titulo {
+/* Encabezado del sitio */
+.encabezado {
+  color: #ffffff;
+  background: var(--f-acento);
+}
+
+.encabezado__interior {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+  align-items: center;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 16px 16px 0;
-  font-size: 1.25rem;
-  color: var(--f-texto);
+  padding: 16px;
+}
+
+.encabezado__logo {
+  display: block;
+  height: 52px;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.encabezado__logo {
+  display: block;
+  height: 48px;
+  width: auto;
+  max-width: 160px;
+  object-fit: contain;
+}
+
+.encabezado__titulo {
+  margin: 0;
+  font-size: 1.6rem;
+  line-height: 1.2;
+}
+
+.encabezado__subtitulo {
+  margin: 4px 0 0;
+  font-size: 0.95rem;
+  color: #dbe6f7;
+}
+
+/* Barra de progreso */
+.progreso {
+  height: 12px;
+  margin-top: 12px;
+  overflow: hidden;
+  background: var(--f-acento-suave);
+  border-radius: 6px;
+}
+
+.progreso__relleno {
+  display: block;
+  height: 100%;
+  background: var(--f-acento);
+  border-radius: 6px;
 }

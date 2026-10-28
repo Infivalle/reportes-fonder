@@ -22,11 +22,22 @@ function titulo(texto: string): string {
     .join(' ')
 }
 
-/** Etiqueta para mostrar: "Fonder Valle Segunda Convocatoria". */
+function primeraMayuscula(texto: string): string {
+  const t = texto.toLowerCase()
+  return t.charAt(0).toUpperCase() + t.slice(1)
+}
+
+/**
+ * Etiqueta para mostrar. Los proyectos se presentan como convocatorias:
+ * "FONDERVALLE SEGUNDA CONVOCATORIA" → "Segunda convocatoria".
+ */
 export function etiquetaProyecto(nombre: string): string {
   const limpio = nombre.trim().replace(/\s+/g, ' ')
   const m = /^fonder\s*valle\s*(.*)$/i.exec(limpio)
-  if (m) return ('Fonder Valle ' + titulo(m[1] ?? '')).trim()
+  if (m) {
+    const resto = (m[1] ?? '').trim()
+    return resto === '' ? 'Fonder Valle' : primeraMayuscula(resto)
+  }
   return limpio === limpio.toUpperCase() ? titulo(limpio) : limpio
 }
 

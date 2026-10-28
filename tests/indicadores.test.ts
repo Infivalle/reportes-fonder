@@ -6,6 +6,7 @@ import {
   indicadorCredito,
   mediana,
   ultimaPorBeneficiario,
+  indicadorMunicipios,
 } from '../src/indicadores/calcular'
 import { formatoEntero, formatoPorcentaje } from '../src/indicadores/formato'
 import { claveProyecto, etiquetaProyecto, listarProyectos } from '../src/indicadores/proyectos'
@@ -65,8 +66,9 @@ function publico(asesorias: FilaPublica[], denominadores: PublicoJson['denominad
 describe('proyectos', () => {
   it('unifica mayúsculas y espacios en la clave y en la etiqueta', () => {
     expect(claveProyecto('FONDERVALLE SEGUNDA CONVOCATORIA')).toBe(claveProyecto('Fonder Valle Segunda Convocatoria'))
-    expect(etiquetaProyecto('FONDERVALLE SEGUNDA CONVOCATORIA')).toBe('Fonder Valle Segunda Convocatoria')
-    expect(etiquetaProyecto('Fonder Valle Primera Convocatoria')).toBe('Fonder Valle Primera Convocatoria')
+    expect(etiquetaProyecto('FONDERVALLE SEGUNDA CONVOCATORIA')).toBe('Segunda convocatoria')
+    expect(etiquetaProyecto('Fonder Valle Primera Convocatoria')).toBe('Primera convocatoria')
+    expect(etiquetaProyecto('Fondervalle')).toBe('Fonder Valle')
     expect(etiquetaProyecto('OTRO PROYECTO')).toBe('Otro Proyecto')
     expect(etiquetaProyecto('Otro Proyecto Mixto')).toBe('Otro Proyecto Mixto')
   })
@@ -74,8 +76,8 @@ describe('proyectos', () => {
   it('lista cada proyecto una sola vez aunque venga escrito distinto', () => {
     const l = listarProyectos([P2, 'Fonder Valle Segunda Convocatoria', P1])
     expect(l.map((p) => p.etiqueta)).toEqual([
-      'Fonder Valle Primera Convocatoria',
-      'Fonder Valle Segunda Convocatoria',
+      'Primera convocatoria',
+      'Segunda convocatoria',
     ])
   })
 })
@@ -252,5 +254,29 @@ describe('calcularIndicadores', () => {
     expect(r.asesorias).toBe(2)
     expect(r.beneficiarios).toBe(1)
     expect(r.satisfaccion).toMatchObject({ n: 1, valor: 100 })
+  })
+})
+
+describe('cubrimiento de municipios', () => {
+  it('cuenta municipios distintos del Valle y descarta nulos y códigos ajenos', () => {
+    const filas = [
+      fila({ municipio_codigo: '76001' }),
+      fila({ municipio_codigo: '76001' }),
+      fila({ municipio_codigo: '76834' }),
+      fila({ municipio_codigo: null }),
+      fila({ municipio_codigo: '99999' }),
+    ]
+    const m = indicadorMunicipios(filas)
+    expect(m).toMatchObject({ visitados: 2, total: 42 })
+    expect(m.porcentaje).toBeCloseTo((2 / 42) * 100)
+  })
+
+  it('con filtro por convocatoria cuenta solo sus municipios', () => {
+    const publicoM = publico(
+      [fila({ proyecto: P1, municipio_codigo: '76001' }), fila({ proyecto: P2, municipio_codigo: '76834' }), fila({ proyecto: P2, municipio_codigo: '76001' })],
+      [],
+    )
+    expect(calcularIndicadores(publicoM, { proyecto: null }).municipios.visitados).toBe(2)
+    expect(calcularIndicadores(publicoM, { proyecto: claveProyecto(P1) }).municipios.visitados).toBe(1)
   })
 })

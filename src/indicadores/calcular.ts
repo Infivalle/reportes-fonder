@@ -1,5 +1,6 @@
 import { OPCIONES_FORMULARIO } from '../catalogo/opciones'
 import type { FilaPublica, PublicoJson } from '../publico/tipos'
+import { MUNICIPIOS_VALLE } from '../limpieza/municipios'
 import { claveProyecto } from './proyectos'
 
 /** Filtros globales. En F2 se agregan municipio y mes; el proyecto va primero. */
@@ -39,6 +40,15 @@ export interface IndicadorCobertura {
   inconsistente: boolean
 }
 
+export interface IndicadorMunicipios {
+  /** Municipios del Valle con al menos un beneficiario atendido (según el filtro). */
+  visitados: number
+  /** Municipios del Valle del Cauca (42). */
+  total: number
+  /** 0 a 100. */
+  porcentaje: number
+}
+
 export interface IndicadorCredito {
   n: number
   mediana: number | null
@@ -51,6 +61,7 @@ export interface ResultadoIndicadores {
   /** Beneficiarios distintos que pasan el filtro. */
   beneficiarios: number
   cobertura: IndicadorCobertura
+  municipios: IndicadorMunicipios
   satisfaccion: IndicadorProporcion
   resultados: IndicadorProporcion & { parcialmente: number | null; sinEvidenciar: number | null }
   pagos: IndicadorProporcion
@@ -177,6 +188,17 @@ export function denominadorCobertura(
   return total > 0 ? total : null
 }
 
+/** Cuenta municipios distintos del Valle presentes en las filas; los códigos nulos o ajenos no cuentan. */
+export function indicadorMunicipios(filas: readonly FilaPublica[]): IndicadorMunicipios {
+  const validos = new Set(MUNICIPIOS_VALLE.map((m) => m.codigo))
+  const vistos = new Set<string>()
+  for (const f of filas) {
+    if (f.municipio_codigo !== null && validos.has(f.municipio_codigo)) vistos.add(f.municipio_codigo)
+  }
+  const total = validos.size
+  return { visitados: vistos.size, total, porcentaje: (vistos.size / total) * 100 }
+}
+
 export function calcularIndicadores(publico: PublicoJson, filtros: Filtros): ResultadoIndicadores {
   const filas = aplicarFiltros(publico.asesorias, filtros)
   const porBeneficiario = ultimaPorBeneficiario(filas)
@@ -239,6 +261,7 @@ export function calcularIndicadores(publico: PublicoJson, filtros: Filtros): Res
     asesorias: filas.length,
     beneficiarios: atendidos,
     cobertura,
+    municipios: indicadorMunicipios(filas),
     satisfaccion,
     resultados,
     pagos,

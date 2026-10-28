@@ -4,7 +4,7 @@ import { formatoEntero, formatoFecha, formatoPorcentaje } from '../indicadores/f
 import { listarProyectos } from '../indicadores/proyectos'
 import type { PublicoJson } from '../publico/tipos'
 import './estilos.css'
-import { Tarjeta, TablaDistribucion } from './Tarjeta'
+import { Progreso, Tarjeta, TablaDistribucion } from './Tarjeta'
 
 interface Props {
   datos: PublicoJson
@@ -26,6 +26,7 @@ export function VistaIndicadores({ datos }: Props) {
   )
   const fecha = formatoFecha(datos.fecha_corte)
   const c = r.cobertura
+  const m = r.municipios
   // Rango más frecuente; si empatan, el primero en el orden del formulario.
   const masFrecuente = r.empleo.items.reduce<(typeof r.empleo.items)[number] | null>(
     (mejor, i) => (i.conteo > (mejor?.conteo ?? 0) ? i : mejor),
@@ -44,9 +45,9 @@ export function VistaIndicadores({ datos }: Props) {
           </p>
         </div>
         <div className="filtro">
-          <label htmlFor={idFiltro}>Proyecto</label>
+          <label htmlFor={idFiltro}>Convocatoria</label>
           <select id={idFiltro} value={seleccion} onChange={(e) => setSeleccion(e.target.value)}>
-            <option value={TODOS}>Todos los proyectos</option>
+            <option value={TODOS}>Todas las convocatorias</option>
             {proyectos.map((p) => (
               <option key={p.clave} value={p.clave}>
                 {p.etiqueta}
@@ -73,11 +74,21 @@ export function VistaIndicadores({ datos }: Props) {
           }
           n={null}
         >
+          <Progreso porcentaje={c.porcentaje} etiqueta="Cobertura de beneficiarios" />
           {c.inconsistente && (
             <p className="tarjeta__aviso" role="note">
               Hay más beneficiarios atendidos que el total cargado: el total está desactualizado.
             </p>
           )}
+        </Tarjeta>
+
+        <Tarjeta
+          titulo="Cubrimiento de municipios"
+          valor={`${formatoEntero(m.visitados)} de ${formatoEntero(m.total)}`}
+          descripcion={`Municipios del Valle con al menos un beneficiario atendido (${formatoPorcentaje(m.porcentaje)}).`}
+          n={null}
+        >
+          <Progreso porcentaje={m.porcentaje} etiqueta="Municipios con beneficiarios atendidos" />
         </Tarjeta>
 
         <Tarjeta
@@ -147,12 +158,13 @@ export function VistaIndicadores({ datos }: Props) {
         </Tarjeta>
       </div>
 
-      <footer className="indicadores__notas">
+      <details className="metodo">
+        <summary>¿Cómo se calculan los indicadores?</summary>
         <p>
-          Cada porcentaje se calcula sobre las respuestas recibidas a esa pregunta (n). Si un beneficiario tiene más de una
+          Cada porcentaje se calcula sobre las respuestas recibidas a esa pregunta. Si un beneficiario tiene más de una
           asesoría, se usa la más reciente. Las asesorías repetidas se descartan al cargar los datos.
         </p>
-      </footer>
+      </details>
     </section>
   )
 }

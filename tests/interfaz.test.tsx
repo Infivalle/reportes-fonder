@@ -3,6 +3,7 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { Encabezado } from '../src/interfaz/Encabezado'
 import { PaginaIndicadores } from '../src/interfaz/PaginaIndicadores'
 import { VistaIndicadores } from '../src/interfaz/VistaIndicadores'
 import type { FilaPublica, PublicoJson } from '../src/publico/tipos'
@@ -79,9 +80,9 @@ afterEach(() => {
 })
 
 describe('VistaIndicadores', () => {
-  it('muestra los siete indicadores y la fecha de corte', () => {
+  it('muestra los ocho indicadores y la fecha de corte', () => {
     render(<VistaIndicadores datos={datos([{ proyecto: P1, total_beneficiarios: 8 }, { proyecto: 'Fonder Valle Segunda Convocatoria', total_beneficiarios: 12 }])} />)
-    for (const t of ['Cobertura', 'Satisfacción', 'Resultados esperados', 'Pagos al día', 'Necesidad de nuevo crédito', 'Crédito utilizado', 'Empleo']) {
+    for (const t of ['Cobertura', 'Cubrimiento de municipios', 'Satisfacción', 'Resultados esperados', 'Pagos al día', 'Necesidad de nuevo crédito', 'Crédito utilizado', 'Empleo']) {
       expect(tarjeta(t)).toBeInTheDocument()
     }
     expect(screen.getByText(/Fecha de corte: 28 de octubre de 2026/)).toBeInTheDocument()
@@ -93,13 +94,13 @@ describe('VistaIndicadores', () => {
   it('el filtro por proyecto recalcula, y los dos nombres del mismo proyecto no se duplican', async () => {
     render(<VistaIndicadores datos={datos([{ proyecto: P1, total_beneficiarios: 8 }])} />)
     const opciones = screen.getAllByRole('option').map((o) => o.textContent)
-    expect(opciones).toEqual(['Todos los proyectos', 'Fonder Valle Primera Convocatoria', 'Fonder Valle Segunda Convocatoria'])
+    expect(opciones).toEqual(['Todas las convocatorias', 'Primera convocatoria', 'Segunda convocatoria'])
 
-    await userEvent.selectOptions(screen.getByLabelText('Proyecto'), 'Fonder Valle Primera Convocatoria')
+    await userEvent.selectOptions(screen.getByLabelText('Convocatoria'), 'Primera convocatoria')
     expect(valorDe('Satisfacción')).toBe('100 %')
     expect(within(tarjeta('Cobertura')).getByText('2 de 8 beneficiarios con asesoría.')).toBeInTheDocument()
 
-    await userEvent.selectOptions(screen.getByLabelText('Proyecto'), 'Fonder Valle Segunda Convocatoria')
+    await userEvent.selectOptions(screen.getByLabelText('Convocatoria'), 'Segunda convocatoria')
     expect(valorDe('Satisfacción')).toBe('0 %')
   })
 
@@ -108,6 +109,20 @@ describe('VistaIndicadores', () => {
     const c = tarjeta('Cobertura')
     expect(valorDe('Cobertura')).toBe('Sin dato')
     expect(within(c).getByText(/Falta cargar el total/)).toBeInTheDocument()
+  })
+
+  it('no muestra "n = … respuestas" ni pie de página; el método va en un desplegable', () => {
+    render(<VistaIndicadores datos={datos([])} />)
+    expect(screen.queryByText(/n = /)).not.toBeInTheDocument()
+    expect(screen.queryByRole('contentinfo')).not.toBeInTheDocument()
+    expect(screen.getByText('¿Cómo se calculan los indicadores?')).toBeInTheDocument()
+  })
+
+  it('el cubrimiento de municipios y la cobertura traen barra de progreso', () => {
+    render(<VistaIndicadores datos={datos([{ proyecto: P1, total_beneficiarios: 8 }, { proyecto: 'Fonder Valle Segunda Convocatoria', total_beneficiarios: 12 }])} />)
+    expect(valorDe('Cubrimiento de municipios')).toBe('1 de 42')
+    expect(within(tarjeta('Cubrimiento de municipios')).getByRole('progressbar')).toHaveAttribute('aria-valuenow', '2')
+    expect(within(tarjeta('Cobertura')).getByRole('progressbar')).toHaveAttribute('aria-valuenow', '20')
   })
 
   it('avisa cuando hay pocas respuestas', () => {
@@ -142,5 +157,18 @@ describe('PaginaIndicadores', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => datos([]) }))
     render(<PaginaIndicadores />)
     expect(await screen.findByRole('heading', { name: 'Indicadores de las asesorías' })).toBeInTheDocument()
+  })
+})
+
+describe('Encabezado', () => {
+  it('muestra el título y, si hay logos, sus imágenes con texto alternativo', () => {
+    render(<Encabezado logos={[{ archivo: 'a.png', alt: 'Logo A' }]} />)
+    expect(screen.getByRole('heading', { level: 1, name: 'Asesorías Fonder Valle' })).toBeInTheDocument()
+    expect(screen.getByAltText('Logo A')).toHaveAttribute('src', expect.stringContaining('logos/a.png'))
+  })
+
+  it('sin logos no dibuja ninguna imagen', () => {
+    render(<Encabezado logos={[]} />)
+    expect(screen.queryByRole('img')).not.toBeInTheDocument()
   })
 })
