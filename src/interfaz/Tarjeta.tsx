@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import type { Distribucion } from '../indicadores/calcular'
 import { formatoEntero, formatoPorcentaje } from '../indicadores/formato'
 
@@ -27,7 +27,12 @@ export function Tarjeta({ titulo, valor, descripcion, tono = 'azul', resumen = f
   return (
     <article className={`tarjeta tarjeta--${tono}${resumen ? ' tarjeta--resumen' : ''}`} aria-label={titulo}>
       <h4 className="tarjeta__titulo">{titulo}</h4>
-      {valor !== undefined && <p className="tarjeta__valor">{valor}</p>}
+      {valor !== undefined && (
+        // --largo: cantidad de caracteres; el CSS reduce la letra para que la cifra quepa en una línea.
+        <p className="tarjeta__valor" style={{ '--largo': Math.max(valor.length, 1) } as CSSProperties}>
+          {valor}
+        </p>
+      )}
       <p className="tarjeta__descripcion">{descripcion}</p>
       {n === 0 && <p className="tarjeta__n">Sin respuestas</p>}
       {pocas && (

@@ -148,6 +148,8 @@ html body {
 
 .tarjeta {
   --tono: var(--t-azul);
+  --valor-max: 2.25rem;
+  container-type: inline-size;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -179,9 +181,11 @@ html body {
 
 .tarjeta__valor {
   margin: 4px 0 0;
-  font-size: 2.25rem;
+  /* La letra se ajusta al ancho de la tarjeta según el largo del texto (0,58 em por carácter,
+     aprox.), con un tope de tamaño por arriba y un mínimo legible por abajo. */
+  font-size: clamp(1.35rem, calc(100cqw / (var(--largo, 6) * 0.58)), var(--valor-max));
   font-weight: 700;
-  line-height: 1.1;
+  line-height: 1.15;
   color: var(--f-acento);
 }
 
@@ -254,8 +258,8 @@ html body {
 }
 
 @media (max-width: 480px) {
-  .tarjeta__valor {
-    font-size: 2rem;
+  .tarjeta {
+    --valor-max: 2rem;
   }
 
   .resumen {
