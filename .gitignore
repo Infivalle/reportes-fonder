@@ -35,3 +35,6 @@ supabase/.temp/
 Thumbs.db
 .vscode/
 .idea/
+
+# Capa pública generada en cada despliegue
+public/publico.json

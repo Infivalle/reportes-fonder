@@ -1,0 +1,22 @@
+name: Diario
+
+# Una vez al día: vuelve a leer las vistas y republica el sitio. Además mantiene activo el
+# proyecto de Supabase del plan gratuito (que se pausa tras 7 días sin actividad).
+#
+# Aviso: GitHub desactiva los workflows programados de un repositorio público tras 60 días
+# sin actividad (commits). Si pasa, se reactiva en la pestaña Actions.
+
+on:
+  schedule:
+    - cron: '17 9 * * *' # 04:17 hora de Colombia
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  republicar:
+    uses: ./.github/workflows/deploy.yml
+    secrets: inherit

@@ -3,9 +3,11 @@ name: Deploy
 on:
   push:
     branches: [main]
-  # Lo dispara la Edge Function `cargar-datos` tras una carga (F1)
+  # Lo dispara la Edge Function `cargar-datos` tras una carga
   repository_dispatch:
     types: [datos-actualizados]
+  # Lo llama diario.yml
+  workflow_call:
   workflow_dispatch:
 
 permissions:
@@ -32,9 +34,18 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
+
+      # Capa pública: lee SOLO las vistas anonimizadas con el rol de solo lectura.
+      # Si falla la verificación, el despliegue se detiene y el sitio anterior queda como está.
+      - name: Generar publico.json
+        run: npm run generar-publico
+        env:
+          PUBLICO_DB_URL: ${{ secrets.PUBLICO_DB_URL }}
+          PUBLICO_DB_CA: ${{ secrets.PUBLICO_DB_CA }}
+
       - run: npm run build
         env:
-          # Ambas son públicas por diseño. Se definen en Settings > Secrets and variables > Actions > Variables.
+          # Ambas son públicas por diseño (Settings > Secrets and variables > Actions > Variables).
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
 

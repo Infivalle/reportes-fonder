@@ -22,6 +22,11 @@ const TABLAS = [
   'asesoria_canales',
   'cargas',
   'bitacora',
+  // vistas de la capa pública: solo las lee el rol de solo lectura
+  'vista_publica_asesorias',
+  'vista_publica_agregados',
+  'vista_publica_denominadores',
+  'vista_publica_meta',
 ] as const
 
 describe.skipIf(!url || !anon)('RLS: la llave anon no accede a nada', () => {

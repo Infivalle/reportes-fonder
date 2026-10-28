@@ -3,7 +3,8 @@
 Dashboard de las asesorías a beneficiarios de Fonder Valle (Infivalle).
 Sitio estático (React + Vite) publicado en GitHub Pages, con datos en Supabase.
 
-> **Estado:** F0 · cimientos. El sitio publica una página vacía.
+> **Estado:** F1 · datos y carga. Ya existen la validación y limpieza del TSV, la carga atómica a
+> Supabase y la capa pública anonimizada. La interfaz (indicadores, gráficas, mapa) llega en F2 en adelante.
 
 ## Reglas de este repositorio (es público)
 
@@ -32,24 +33,33 @@ npm run dev
 | `npm test` | Pruebas unitarias (Vitest) |
 | `npm run test:rls` | Prueba que la llave `anon` no accede a nada (necesita `SUPABASE_URL` y `SUPABASE_ANON_KEY`) |
 | `npm run build` | Compila a `dist/` |
+| `npm run build:functions` | Regenera la Edge Function empaquetada (`supabase/functions/cargar-datos/index.ts`) |
+| `npm run cargar -- <archivo.tsv> [--confirmar]` | Valida o carga un TSV a Supabase (admin) |
+| `npm run generar-publico` | Genera `public/publico.json` (lo usan los workflows) |
 
 ## Estructura
 
 ```
 src/
-  catalogo/     # tipo, etiqueta y opciones de cada campo (F2)
+  catalogo/     # tipo, etiqueta y opciones de cada campo
   formato/      # columnas esperadas de cada formato de TSV
-  limpieza/     # lectura, duplicados, municipios, categorías (F1)
+  limpieza/     # lectura, validación, duplicados, municipios, categorías, atípicos
+  funciones/    # lógica de las Edge Functions (se empaqueta en supabase/functions)
+  publico/      # capa pública: ensamblado de publico.json y verificación de publicación
   lib/          # cliente de Supabase
+scripts/        # carga local, generador de publico.json, empaquetado de funciones
 supabase/
-  migrations/   # tablas, RLS, bitácora
+  migrations/   # tablas, RLS, carga atómica, vistas anonimizadas
+  functions/    # Edge Functions (archivos generados)
 tests/
   fixtures/     # TSV sintéticos
-  rls/          # prueba de acceso con la llave anon
-docs/           # formato de datos y pasos de despliegue
+  sql/          # migraciones y vistas probadas en un Postgres embebido
+  rls/          # prueba de acceso con la llave anon contra Supabase
+docs/           # formato de datos, despliegue y carga
 ```
 
 ## Documentación
 
 - [`docs/formato-v1.md`](docs/formato-v1.md) — columnas que espera el TSV actual.
 - [`docs/despliegue-f0.md`](docs/despliegue-f0.md) — configuración de GitHub Pages y Supabase.
+- [`docs/carga-datos.md`](docs/carga-datos.md) — migraciones, usuario admin, función de carga, capa pública y cómo cargar un TSV.

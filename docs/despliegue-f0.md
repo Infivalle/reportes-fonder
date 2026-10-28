@@ -9,7 +9,7 @@
    por eso son *variables* y no *secrets*.
 
 El workflow `deploy.yml` publica en cada push a `main`. La primera vez, el sitio queda en
-`https://<owner>.github.io/repotes-fonder/`.
+`https://<owner>.github.io/reportes-fonder/`.
 
 ## 2. Supabase
 
