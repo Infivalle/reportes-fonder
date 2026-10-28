@@ -1,8 +1,10 @@
+import { PaginaIndicadores } from './interfaz/PaginaIndicadores'
+
 export default function App() {
   return (
-    <main className="portada">
-      <h1>Asesorías Fonder Valle</h1>
-      <p>Sitio en construcción. Fase F0: cimientos.</p>
+    <main className="app">
+      <h1 className="app__titulo">Asesorías Fonder Valle</h1>
+      <PaginaIndicadores />
     </main>
   )
 }
