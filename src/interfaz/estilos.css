@@ -1,28 +1,22 @@
 /* Vista de indicadores. Contraste AA sobre fondo blanco; tema claro y oscuro. */
+/* Vista de indicadores. Siempre en tema claro: azul oscuro sobre blanco, contraste AA. */
 :root {
-  --f-texto: #1b2a2f;
-  --f-suave: #4a5a60;
+  color-scheme: light;
+  --f-texto: #14213d;
+  --f-suave: #44546f;
   --f-fondo: #ffffff;
-  --f-tarjeta: #f4f7f8;
-  --f-borde: #cfd9dc;
-  --f-acento: #0b6e6e;
-  --f-acento-suave: #b9dede;
+  --f-tarjeta: #f3f6fb;
+  --f-borde: #c9d6ea;
+  --f-acento: #0f3a7d;
+  --f-acento-suave: #b7c9e8;
   --f-aviso-fondo: #fff4d6;
   --f-aviso-texto: #5a4300;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --f-texto: #e8eef0;
-    --f-suave: #aebcc1;
-    --f-fondo: #121a1d;
-    --f-tarjeta: #1b272b;
-    --f-borde: #33454b;
-    --f-acento: #5cc8c8;
-    --f-acento-suave: #24595a;
-    --f-aviso-fondo: #3a2f10;
-    --f-aviso-texto: #f3d98a;
-  }
+/* "html body" gana a cualquier regla de body de index.css, sin importar el orden de carga. */
+html body {
+  color: var(--f-texto);
+  background: var(--f-fondo);
 }
 
 .solo-lectores {
