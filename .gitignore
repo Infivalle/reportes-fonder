@@ -1,0 +1,37 @@
+# Datos: NUNCA al repositorio (repo público)
+data/
+*.tsv
+*.csv
+*.xlsx
+*.xls
+!tests/fixtures/*.tsv
+
+# Secretos
+.env
+.env.*
+!.env.example
+*.pem
+*.ppk
+*.key
+
+# Instructivos y consultas de producción
+instructivo*
+README_asesorias*
+*extraccion*.sql
+
+# Node / build
+node_modules/
+dist/
+coverage/
+*.log
+.vite/
+
+# Supabase local
+supabase/.branches/
+supabase/.temp/
+
+# Sistema
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
