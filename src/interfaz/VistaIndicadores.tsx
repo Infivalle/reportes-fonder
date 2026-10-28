@@ -33,6 +33,11 @@ export function VistaIndicadores({ datos }: Props) {
     null,
   )
   const rangoMasFrecuente = masFrecuente?.valor ?? 'Sin dato'
+  const destinoTop = r.destino.items.reduce<(typeof r.destino.items)[number] | null>(
+    (mejor, i) => (i.conteo > (mejor?.conteo ?? 0) ? i : mejor),
+    null,
+  )
+  const destinoMasFrecuente = destinoTop?.valor ?? 'Sin dato'
 
   return (
     <section className="indicadores" aria-labelledby="titulo-indicadores">
@@ -141,12 +146,12 @@ export function VistaIndicadores({ datos }: Props) {
 
           <Tarjeta
             tono="turquesa"
-            titulo="Pagos al día"
-            valor={formatoPorcentaje(r.pagos.valor)}
-            descripcion="Pagan según el cronograma."
-            n={r.pagos.n}
+            titulo="Destino del crédito"
+            valor={destinoMasFrecuente}
+            descripcion="Mejoras logradas con el crédito, más frecuente. Cada beneficiario puede marcar varias."
+            n={r.destino.n}
           >
-            <TablaDistribucion titulo="Pagos según cronograma" distribucion={r.pagos.distribucion} resaltar={['Sí']} />
+            <TablaDistribucion titulo="Mejoras logradas con el crédito" distribucion={r.destino} />
           </Tarjeta>
 
           <Tarjeta

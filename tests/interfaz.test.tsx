@@ -82,7 +82,7 @@ afterEach(() => {
 describe('VistaIndicadores', () => {
   it('muestra los indicadores del resumen y del detalle y la fecha de corte', () => {
     render(<VistaIndicadores datos={datos([{ proyecto: P1, total_beneficiarios: 8 }, { proyecto: 'Fonder Valle Segunda Convocatoria', total_beneficiarios: 12 }])} />)
-    for (const t of ['Cobertura', 'Cubrimiento de municipios', 'Satisfacción', 'Detalle de satisfacción', 'Resultados esperados', 'Pagos al día', 'Necesidad de nuevo crédito', 'Crédito utilizado', 'Empleo']) {
+    for (const t of ['Cobertura', 'Cubrimiento de municipios', 'Satisfacción', 'Detalle de satisfacción', 'Resultados esperados', 'Destino del crédito', 'Necesidad de nuevo crédito', 'Crédito utilizado', 'Empleo']) {
       expect(tarjeta(t)).toBeInTheDocument()
     }
     expect(screen.getByText(/Fecha de corte: 28 de octubre de 2026/)).toBeInTheDocument()
@@ -124,6 +124,21 @@ describe('VistaIndicadores', () => {
     expect(within(tarjeta('Cubrimiento de municipios')).getByRole('progressbar')).toHaveAttribute('aria-valuenow', '2')
     expect(within(tarjeta('Cobertura')).getByRole('progressbar')).toHaveAttribute('aria-valuenow', '20')
     expect(within(tarjeta('Satisfacción')).getByRole('progressbar')).toHaveAttribute('aria-valuenow', '50')
+  })
+
+  it('destino del crédito: muestra la mejora más frecuente y agrupa lo demás como Otros', () => {
+    const d = datos([])
+    d.asesorias = [
+      fila({ mejoras: ['CT', 'AI'] }),
+      fila({ mejoras: ['CT'] }),
+      fila({ mejoras: ['O'] }),
+      fila({ mejoras: [] }),
+    ]
+    render(<VistaIndicadores datos={d} />)
+    expect(valorDe('Destino del crédito')).toBe('Capital de trabajo')
+    const t = within(tarjeta('Destino del crédito')).getByRole('table')
+    expect(within(t).getByRole('row', { name: /Otros/ })).toHaveTextContent('1')
+    expect(screen.queryByText('Pagos al día')).not.toBeInTheDocument()
   })
 
   it('avisa cuando hay pocas respuestas', () => {

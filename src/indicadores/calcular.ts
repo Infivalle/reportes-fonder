@@ -1,5 +1,6 @@
 import { OPCIONES_FORMULARIO } from '../catalogo/opciones'
 import type { FilaPublica, PublicoJson } from '../publico/tipos'
+import { MEJORAS } from '../catalogo/codigos'
 import { MUNICIPIOS_VALLE } from '../limpieza/municipios'
 import { claveProyecto } from './proyectos'
 
@@ -67,6 +68,8 @@ export interface ResultadoIndicadores {
   pagos: IndicadorProporcion
   nuevoCredito: IndicadorProporcion
   creditoUtilizado: IndicadorCredito
+  /** Destino del crédito: mejoras logradas. Un beneficiario puede marcar varias. */
+  destino: Distribucion
   empleo: Distribucion
 }
 
@@ -199,6 +202,41 @@ export function indicadorMunicipios(filas: readonly FilaPublica[]): IndicadorMun
   return { visitados: vistos.size, total, porcentaje: (vistos.size / total) * 100 }
 }
 
+const ETIQUETA_OTROS = 'Otros'
+
+/**
+ * Destino del crédito = "¿Qué mejoras se lograron con el crédito?" (selección múltiple).
+ * - Las opciones cerradas se cuentan por su nombre; la opción "Otras" y cualquier código que no esté
+ *   en el catálogo (respuestas abiertas o cualitativas) se agrupan como "Otros".
+ * - Un beneficiario cuenta una vez por opción, aunque la repita; n = beneficiarios que respondieron,
+ *   por eso los porcentajes pueden sumar más de 100 %.
+ * - Orden: de mayor a menor, con "Otros" siempre al final.
+ */
+export function indicadorDestino(filas: readonly FilaPublica[]): Distribucion {
+  const conteos = new Map<string, number>()
+  for (const [codigo, nombre] of Object.entries(MEJORAS)) {
+    if (codigo !== 'O') conteos.set(nombre, 0)
+  }
+  conteos.set(ETIQUETA_OTROS, 0)
+  let n = 0
+  for (const f of filas) {
+    const etiquetas = new Set(
+      f.mejoras.map((c) => (c === 'O' || MEJORAS[c] === undefined ? ETIQUETA_OTROS : MEJORAS[c]!)),
+    )
+    if (etiquetas.size === 0) continue
+    n += 1
+    for (const e of etiquetas) conteos.set(e, (conteos.get(e) ?? 0) + 1)
+  }
+  const items = [...conteos.entries()]
+    .map(([valor, conteo]) => ({ valor, conteo, porcentaje: porcentaje(conteo, n) }))
+    .sort((a, b) => {
+      if (a.valor === ETIQUETA_OTROS) return 1
+      if (b.valor === ETIQUETA_OTROS) return -1
+      return b.conteo - a.conteo
+    })
+  return { n, items }
+}
+
 export function calcularIndicadores(publico: PublicoJson, filtros: Filtros): ResultadoIndicadores {
   const filas = aplicarFiltros(publico.asesorias, filtros)
   const porBeneficiario = ultimaPorBeneficiario(filas)
@@ -267,6 +305,7 @@ export function calcularIndicadores(publico: PublicoJson, filtros: Filtros): Res
     pagos,
     nuevoCredito,
     creditoUtilizado,
+    destino: indicadorDestino(porBeneficiario),
     empleo,
   }
 }

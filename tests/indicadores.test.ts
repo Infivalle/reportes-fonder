@@ -6,6 +6,7 @@ import {
   indicadorCredito,
   mediana,
   ultimaPorBeneficiario,
+  indicadorDestino,
   indicadorMunicipios,
 } from '../src/indicadores/calcular'
 import { formatoEntero, formatoPorcentaje } from '../src/indicadores/formato'
@@ -278,5 +279,29 @@ describe('cubrimiento de municipios', () => {
     )
     expect(calcularIndicadores(publicoM, { proyecto: null }).municipios.visitados).toBe(2)
     expect(calcularIndicadores(publicoM, { proyecto: claveProyecto(P1) }).municipios.visitados).toBe(1)
+  })
+})
+
+describe('destino del crédito (mejoras logradas)', () => {
+  it('cuenta cada beneficiario una vez por opción y agrupa "Otras" y códigos desconocidos como Otros', () => {
+    const d = indicadorDestino([
+      fila({ mejoras: ['CT', 'AI', 'CT'] }),
+      fila({ mejoras: ['CT'] }),
+      fila({ mejoras: ['O', 'XX'] }),
+      fila({ mejoras: [] }),
+    ])
+    expect(d.n).toBe(3)
+    const por = Object.fromEntries(d.items.map((i) => [i.valor, i.conteo]))
+    expect(por['Capital de trabajo']).toBe(2)
+    expect(por['Aumento de ingresos']).toBe(1)
+    expect(por['Otros']).toBe(1)
+    expect(d.items.at(-1)?.valor).toBe('Otros')
+    expect(d.items.find((i) => i.valor === 'Capital de trabajo')?.porcentaje).toBeCloseTo((2 / 3) * 100)
+  })
+
+  it('sin respuestas: n = 0 y porcentajes nulos', () => {
+    const d = indicadorDestino([fila({ mejoras: [] })])
+    expect(d.n).toBe(0)
+    expect(d.items.every((i) => i.porcentaje === null)).toBe(true)
   })
 })
