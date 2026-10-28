@@ -40,9 +40,12 @@ export function nuevaTarjeta(def: GraficaDef = nuevaDef(CAMPO_INICIAL), filtros:
   return { id: nuevoId(), def, filtros }
 }
 
-/** Tablero de la primera visita: una gráfica de ejemplo para que la pantalla no empiece vacía. */
+/** Gráficas de partida: para que nadie tenga que armar todo desde cero. Son campos del catálogo, editables y quitables. */
+const CAMPOS_EJEMPLO = ['satisfaction', 'results_as_expected', 'mejoras'] as const
+
+/** Tablero de la primera visita (y de "Cargar gráficas de ejemplo"). */
 export function tableroInicial(): Tablero {
-  return { version: VERSION_TABLERO, tarjetas: [nuevaTarjeta()] }
+  return { version: VERSION_TABLERO, tarjetas: CAMPOS_EJEMPLO.map((c) => nuevaTarjeta(nuevaDef(c))) }
 }
 
 export const tableroVacio = (): Tablero => ({ version: VERSION_TABLERO, tarjetas: [] })

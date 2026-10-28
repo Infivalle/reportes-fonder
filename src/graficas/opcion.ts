@@ -49,7 +49,11 @@ function dato(c: { valor: number | null; texto: string }): DatoConTexto {
   return { value: c.valor, texto: c.texto }
 }
 
-export function construirOpcion(datos: DatosGrafica, def: GraficaDef): EChartsCoreOption | null {
+/**
+ * `compacta` (tarjeta del tablero): la dona no lleva leyenda y solo etiqueta las porciones de más
+ * de ~4 %; el resto se lee con el cursor, ampliando la gráfica o en la tabla de datos.
+ */
+export function construirOpcion(datos: DatosGrafica, def: GraficaDef, compacta = false): EChartsCoreOption | null {
   if (!hayQueDibujar(datos, def)) return null
 
   const varias = datos.series.length > 1
@@ -74,12 +78,13 @@ export function construirOpcion(datos: DatosGrafica, def: GraficaDef): EChartsCo
     const s = datos.series[0]!
     return {
       ...comun,
-      legend: { bottom: 0, textStyle: { color: TEXTO } },
+      legend: compacta ? { show: false } : { type: 'scroll' as const, bottom: 0, textStyle: { color: TEXTO } },
       series: [
         {
           type: 'pie',
-          radius: ['42%', '68%'],
-          center: ['50%', '45%'],
+          radius: compacta ? ['36%', '58%'] : ['42%', '68%'],
+          center: ['50%', compacta ? '50%' : '45%'],
+          minShowLabelAngle: compacta ? 15 : 0,
           itemStyle: { borderColor: '#f8fbff', borderWidth: 2 },
           label: { color: TEXTO, formatter: (p: { name?: string; data?: DatoConTexto }) => `${p.name ?? ''}: ${textoDe(p)}` },
           data: datos.categorias.map((nombre, i) => ({ name: nombre, ...dato(s.celdas[i] ?? { valor: null, texto: '' }) })).filter((d) => d.value !== null && d.value > 0),

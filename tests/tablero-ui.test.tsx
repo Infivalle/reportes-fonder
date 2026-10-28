@@ -45,9 +45,12 @@ function datos(): PublicoJson {
 }
 const SIN = { proyecto: null, municipio: null, mes: null }
 
+const UNA = JSON.stringify({ version: 1, tarjetas: [{ id: 's1', def: { campo: 'satisfaction', grafica: 'barras', medida: 'conteo', desglose: null }, filtros: {} }] })
+// Casi todas las pruebas parten de un tablero con una sola gráfica; la primera visita se prueba aparte.
 beforeEach(() => {
   lienzo.mockClear()
   localStorage.clear()
+  localStorage.setItem(CLAVE_TABLERO, UNA)
 })
 afterEach(() => {
   cleanup()
@@ -55,6 +58,7 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
+const EJEMPLO = ['Satisfacción', 'Resultados esperados', 'Destino del crédito (mejoras logradas)']
 const tarjetas = () => within(screen.getByRole('list', { name: 'Gráficas del tablero' })).getAllByRole('listitem')
 const titulos = () => tarjetas().map((t) => within(t).getByRole('heading', { level: 3 }).textContent)
 
@@ -148,6 +152,21 @@ describe('tablero: varias gráficas', () => {
   })
 })
 
+describe('tablero: gráficas de ejemplo', () => {
+  it('la primera visita trae tres gráficas para no armar todo desde cero', () => {
+    localStorage.clear()
+    render(<PaginaGraficas datos={datos()} filtros={SIN} />)
+    expect(titulos()).toEqual(EJEMPLO)
+  })
+
+  it('con el tablero vacío se pueden volver a cargar', async () => {
+    render(<PaginaGraficas datos={datos()} filtros={SIN} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Quitar: Satisfacción' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Cargar gráficas de ejemplo' }))
+    expect(titulos()).toEqual(EJEMPLO)
+  })
+})
+
 describe('tablero: filtros propios', () => {
   it('una gráfica puede tener su propio filtro, que se suma a los globales y se ve en la tarjeta', async () => {
     render(<PaginaGraficas datos={datos()} filtros={SIN} />)
@@ -192,7 +211,7 @@ describe('tablero: guardado en el navegador', () => {
     localStorage.setItem(CLAVE_TABLERO, '{no es json')
     render(<PaginaGraficas datos={datos()} filtros={SIN} />)
     expect(screen.getByRole('alert')).toHaveTextContent(/no se pudieron leer/)
-    expect(titulos()).toEqual(['Satisfacción'])
+    expect(titulos()).toEqual(EJEMPLO)
   })
 
   it('si el navegador no deja guardar, la pantalla sigue funcionando y lo avisa', async () => {
@@ -210,7 +229,7 @@ describe('tablero: guardado en el navegador', () => {
       throw new DOMException('bloqueado', 'SecurityError')
     })
     render(<PaginaGraficas datos={datos()} filtros={SIN} />)
-    expect(titulos()).toEqual(['Satisfacción'])
+    expect(titulos()).toEqual(EJEMPLO)
     expect(screen.getByRole('alert')).toHaveTextContent(/no deja guardar/)
   })
 })

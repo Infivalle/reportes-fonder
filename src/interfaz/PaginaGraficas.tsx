@@ -5,7 +5,7 @@ import { calcularGrafica } from '../graficas/datos'
 import { VistaGrafica } from '../graficas/VistaGrafica'
 import { filtrarPorCampos } from '../indicadores/consulta'
 import type { PublicoJson } from '../publico/tipos'
-import { MAX_BYTES_ARCHIVO, MAX_TARJETAS, leerTablero, serializarTablero, type Tablero, type TarjetaTablero } from '../tablero/modelo'
+import { MAX_BYTES_ARCHIVO, MAX_TARJETAS, leerTablero, serializarTablero, tableroInicial, type Tablero, type TarjetaTablero } from '../tablero/modelo'
 import { Panel } from '../tablero/Panel'
 import { PanelEdicion } from '../tablero/PanelEdicion'
 import { TarjetaGrafica } from '../tablero/TarjetaGrafica'
@@ -151,6 +151,9 @@ export function PaginaGraficas({ datos, filtros }: Props) {
         <div className="tablero__vacio">
           <h3>Su tablero está vacío</h3>
           <p>Agregue una gráfica para empezar, o importe un tablero guardado.</p>
+          <button type="button" className="boton" onClick={() => reemplazarTodo(tableroInicial())}>
+            Cargar gráficas de ejemplo
+          </button>
         </div>
       ) : (
         <ul className="tablero" aria-label="Gráficas del tablero">

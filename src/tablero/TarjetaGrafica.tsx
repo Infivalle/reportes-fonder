@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { calcularGrafica } from '../graficas/datos'
 import { VistaGrafica } from '../graficas/VistaGrafica'
+import { Icono, type NombreIcono } from '../interfaz/Icono'
 import { filtrarPorCampos } from '../indicadores/consulta'
 import type { FilaPublica } from '../publico/tipos'
 import type { TarjetaTablero } from './modelo'
@@ -26,9 +27,9 @@ export function TarjetaGrafica({ tarjeta, filas, primera, ultima, onEditar, onDu
   const nombre = resultado.titulo
   const resumen = resumenFiltros(tarjeta.filtros)
 
-  const boton = (texto: string, simbolo: string, onClick: () => void, inactivo = false) => (
+  const boton = (texto: string, icono: NombreIcono, onClick: () => void, inactivo = false) => (
     <button type="button" className="boton boton--icono" onClick={onClick} disabled={inactivo} aria-label={`${texto}: ${nombre}`} title={texto}>
-      <span aria-hidden="true">{simbolo}</span>
+      <Icono nombre={icono} />
     </button>
   )
 
@@ -41,12 +42,12 @@ export function TarjetaGrafica({ tarjeta, filas, primera, ultima, onEditar, onDu
         nota={resumen === '' ? null : <p className="grafica__filtros">Filtro propio — {resumen}</p>}
         acciones={
           <div className="tarjeta-acciones" role="group" aria-label={`Acciones de la gráfica ${nombre}`}>
-            {boton('Mover antes', '↑', () => onMover(-1), primera)}
-            {boton('Mover después', '↓', () => onMover(1), ultima)}
-            {boton('Ampliar', '⤢', onAmpliar)}
-            {boton('Editar', '✎', onEditar)}
-            {boton('Duplicar', '⧉', onDuplicar)}
-            {boton('Quitar', '✕', onQuitar)}
+            {boton('Mover antes', 'subir', () => onMover(-1), primera)}
+            {boton('Mover después', 'bajar', () => onMover(1), ultima)}
+            {boton('Ampliar', 'ampliar', onAmpliar)}
+            {boton('Editar', 'editar', onEditar)}
+            {boton('Duplicar', 'duplicar', onDuplicar)}
+            {boton('Quitar', 'quitar', onQuitar)}
           </div>
         }
       />

@@ -83,3 +83,21 @@ describe('opción de ECharts', () => {
     expect(new Set(PALETA).size).toBe(PALETA.length)
   })
 })
+
+describe('dona en tarjeta compacta', () => {
+  const datosDona = { titulo: 'M', categorias: ['A', 'B'], series: [{ nombre: 'Beneficiarios', celdas: [{ valor: 9, texto: '9' }, { valor: 1, texto: '1' }] }], unidad: 'conteo' as const, base: 10, total: 10, resumen: null, avisos: [] }
+  const def = { campo: 'municipio_codigo', grafica: 'dona' as const, medida: 'conteo' as const, desglose: null }
+
+  it('sin leyenda y solo con etiqueta en las porciones grandes', () => {
+    const o = construirOpcion(datosDona, def, true) as { legend: { show: boolean }; series: { minShowLabelAngle: number }[] }
+    expect(o.legend.show).toBe(false)
+    expect(o.series[0]!.minShowLabelAngle).toBeGreaterThan(0)
+  })
+
+  it('a tamaño completo conserva la leyenda (con desplazamiento) y todas las etiquetas', () => {
+    const o = construirOpcion(datosDona, def) as { legend: { show?: boolean; type: string }; series: { minShowLabelAngle: number }[] }
+    expect(o.legend.show).not.toBe(false)
+    expect(o.legend.type).toBe('scroll')
+    expect(o.series[0]!.minShowLabelAngle).toBe(0)
+  })
+})

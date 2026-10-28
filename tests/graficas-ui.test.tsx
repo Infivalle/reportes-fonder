@@ -4,6 +4,7 @@ import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { PaginaGraficas } from '../src/interfaz/PaginaGraficas'
+import { CLAVE_TABLERO } from '../src/tablero/almacen'
 import type { FilaPublica, PublicoJson } from '../src/publico/tipos'
 
 const lienzo = vi.hoisted(() => vi.fn())
@@ -45,9 +46,12 @@ function datos(): PublicoJson {
 const SIN = { proyecto: null, municipio: null, mes: null }
 const ultimaOpcion = () => (lienzo.mock.calls.at(-1)![0] as { opcion: { series: { type: string }[] } }).opcion
 
+const UNA = JSON.stringify({ version: 1, tarjetas: [{ id: 's1', def: { campo: 'satisfaction', grafica: 'barras', medida: 'conteo', desglose: null }, filtros: {} }] })
+// Casi todas las pruebas parten de un tablero con una sola gráfica; la primera visita se prueba aparte.
 beforeEach(() => {
   lienzo.mockClear()
   localStorage.clear()
+  localStorage.setItem(CLAVE_TABLERO, UNA)
 })
 afterEach(() => {
   cleanup()

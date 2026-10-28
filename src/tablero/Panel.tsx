@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, type KeyboardEvent, type ReactNode } from 'react'
+import { Icono } from '../interfaz/Icono'
 import '../interfaz/estilos.css'
 
 interface Props {
@@ -67,7 +68,7 @@ export function Panel({ titulo, onCerrar, variante, children, pie }: Props) {
             {titulo}
           </h2>
           <button type="button" className="boton boton--icono" onClick={onCerrar} aria-label="Cerrar">
-            ✕
+            <Icono nombre="cerrar" />
           </button>
         </header>
         <div className="panel__cuerpo">{children}</div>

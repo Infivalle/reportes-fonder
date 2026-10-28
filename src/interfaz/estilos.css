@@ -569,8 +569,37 @@ html body {
 .boton--icono {
   min-width: 44px;
   padding: 0;
-  font-size: 1.1rem;
-  line-height: 1;
+  color: var(--f-acento);
+  background: transparent;
+  border-color: transparent;
+}
+
+.boton--icono:hover:not(:disabled) {
+  color: #0b2d63;
+  background: var(--f-acento-suave);
+}
+
+.boton--icono:disabled {
+  color: var(--f-acento-suave);
+  background: transparent;
+  border-color: transparent;
+}
+
+/* Icono = máscara con el SVG de public/iconos: toma el color del texto del botón. */
+.icono {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  vertical-align: middle;
+  background-color: currentColor;
+  -webkit-mask: var(--icono) center / contain no-repeat;
+  mask: var(--icono) center / contain no-repeat;
+}
+
+.grafica__ayuda {
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+  color: var(--f-suave);
 }
 
 .boton--texto {
@@ -654,7 +683,7 @@ html body {
 .tarjeta-acciones {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 0;
   justify-content: flex-end;
   flex: 0 0 auto;
   max-width: 100%;

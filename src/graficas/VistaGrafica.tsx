@@ -70,7 +70,7 @@ function Tabla({ datos, def, visible }: { datos: DatosGrafica; def: GraficaDef; 
 
 /** Una gráfica con su base (n), avisos, y siempre una tabla con los mismos datos. */
 export function VistaGrafica({ datos, def, compacta = false, acciones, nota }: Props) {
-  const opcion = useMemo(() => construirOpcion(datos, def), [datos, def])
+  const opcion = useMemo(() => construirOpcion(datos, def, compacta), [datos, def, compacta])
   const sinDatos = datos.series.length === 0 || datos.categorias.length === 0
   const r = datos.resumen
   const resumen = r && r.n > 0
@@ -104,6 +104,10 @@ export function VistaGrafica({ datos, def, compacta = false, acciones, nota }: P
       )}
 
       {opcion !== null && <Echarts opcion={opcion} alto={altoGrafica(datos, def, compacta)} etiqueta={`Gráfica: ${datos.titulo}`} />}
+
+      {compacta && def.grafica === 'dona' && opcion !== null && (
+        <p className="grafica__ayuda">Las porciones pequeñas no llevan etiqueta: pase el cursor, amplíe la gráfica o abra la tabla.</p>
+      )}
 
       {resumen !== null && <p className="grafica__resumen">{resumen}</p>}
 
