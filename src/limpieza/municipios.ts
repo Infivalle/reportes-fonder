@@ -65,6 +65,10 @@ const ALIAS: Record<string, string> = {
   'ANSERMA NUEVO': '76041',
   AGUILA: '76243',
   'SAN PEDRO VALLE': '76670',
+  // Registros de origen con la letra acentuada dañada ("�"): al normalizar, el "�" queda como espacio.
+  'LA UNI N': '76400',
+  'BOL VAR': '76100',
+  'EL GUILA': '76243',
 }
 
 const POR_NOMBRE = new Map<string, string>([

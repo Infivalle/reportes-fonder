@@ -263,6 +263,16 @@ describe('municipios', () => {
     expect(resolverMunicipio('Florida', 'Antioquia').motivo).toBe('otro_departamento')
   })
 
+  it('reconoce municipios con la letra acentuada dañada en el origen ("�")', () => {
+    expect(resolverMunicipio('LA UNI�N', 'Valle del Cauca').codigo).toBe('76400')
+    expect(resolverMunicipio('La Uni�n', null).codigo).toBe('76400')
+    expect(resolverMunicipio('Bol�var', null).codigo).toBe('76100')
+    expect(resolverMunicipio('BOL�VAR', 'Valle').codigo).toBe('76100')
+    expect(resolverMunicipio('EL �GUILA', null).codigo).toBe('76243')
+    // el departamento sigue mandando
+    expect(resolverMunicipio('LA UNI�N', 'Nariño').motivo).toBe('otro_departamento')
+  })
+
   it('distingue vacío de no reconocido', () => {
     expect(resolverMunicipio(null, null).motivo).toBe('vacio')
     expect(resolverMunicipio('   ', null).motivo).toBe('vacio')
