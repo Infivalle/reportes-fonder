@@ -36,12 +36,17 @@ describe('opción de ECharts', () => {
     expect(o.animation).toBe(false)
     expect(o.aria.enabled).toBe(true)
   })
-  it('con comparación hay una serie por grupo y leyenda; las celdas pequeñas conservan su valor', () => {
-    const o = opcion(def({ desglose: 'proyecto' }))
-    expect(o.series.map((s) => s.name)).toEqual(['A', 'B'])
-    expect(o.legend).toBeDefined()
-    expect(o.series[1]!.data.map((d) => d.texto)).toEqual(['0', '2'])
-    expect(o.series[1]!.data[1]!.value).toBe(2)
+  it('con comparación: barras sin huecos (solo los grupos con valor), leyenda por grupo y cifras intactas', () => {
+    const o = opcion(def({ desglose: 'proyecto' })) as unknown as { series: { name: string; xAxisIndex?: number; data: ({ texto: string; value: number; grupo: string } | null)[] }[]; legend: { data: string[]; selectedMode: boolean } }
+    const huecos = o.series.filter((s) => s.xAxisIndex === undefined)
+    // Muy satisfecho: solo A (6). Satisfecho: solo B (2). Con un solo hueco basta: los ceros no ocupan lugar.
+    expect(huecos).toHaveLength(1)
+    expect(huecos[0]!.data.map((d) => d?.texto)).toEqual(['6', '2'])
+    expect(huecos[0]!.data.map((d) => d?.grupo)).toEqual(['A', 'B'])
+    // La leyenda sale de series vacías en ejes ocultos, una por grupo.
+    expect(o.series.filter((s) => s.xAxisIndex === 1).map((s) => s.name)).toEqual(['A', 'B'])
+    expect(o.legend.data).toEqual(['A', 'B'])
+    expect(o.legend.selectedMode).toBe(false)
   })
   it('barras horizontales: ejes cambiados y categorías de arriba abajo', () => {
     const o = opcion(def({ grafica: 'barras_horizontales' }))
@@ -115,13 +120,13 @@ describe('barras con muchos grupos en tarjeta compacta', () => {
     avisos: [],
   }
   const d = { campo: 'satisfaction', grafica: 'barras' as const, medida: 'conteo' as const, desglose: 'proyecto' }
-  type Opc = { legend?: { type: string }; grid: { top: number }; series: { label: { show: boolean } }[] }
+  type Opc = { legend?: { type: string }; grid: { top: number }; series: { label?: { show: boolean } }[] }
 
   it('sin leyenda ni cifras sobre las barras (no caben)', () => {
     const o = construirOpcion(datosMuchos, d, true) as Opc
     expect(o.legend).toBeUndefined()
     expect(o.grid.top).toBe(20)
-    expect(o.series.every((s) => s.label.show === false)).toBe(true)
+    expect(o.series.filter((s) => s.label).every((s) => s.label!.show === false)).toBe(true)
   })
 
   it('a tamaño completo la leyenda se desplaza en vez de tapar las barras', () => {
@@ -134,6 +139,61 @@ describe('barras con muchos grupos en tarjeta compacta', () => {
     const pocos = { ...datosMuchos, series: datosMuchos.series.slice(0, 3) }
     const o = construirOpcion(pocos, d, true) as Opc
     expect(o.legend).toBeDefined()
-    expect(o.series.every((s) => s.label.show)).toBe(true)
+    expect(o.series.filter((s) => s.label).every((s) => s.label!.show)).toBe(true)
+  })
+})
+
+describe('barras agrupadas sin huecos', () => {
+  const celda = (v: number | null) => ({ valor: v, texto: v === null ? 'Sin dato' : String(v) })
+  const datosG = {
+    titulo: 'T',
+    categorias: ['X', 'Y', 'Z'],
+    series: [
+      { nombre: 'A', celdas: [celda(3), celda(1), celda(0)] },
+      { nombre: 'B', celdas: [celda(0), celda(2), celda(0)] },
+      { nombre: 'C', celdas: [celda(5), celda(4), celda(null)] },
+    ],
+    unidad: 'conteo' as const,
+    base: 15,
+    total: 15,
+    resumen: null,
+    avisos: [],
+  }
+  const d = { campo: 'satisfaction', grafica: 'barras' as const, medida: 'conteo' as const, desglose: 'proyecto' }
+  type Barra = { grupo?: string; value: number; itemStyle: { color: string; decal: unknown } } | null
+  const reales = (op: { series: { xAxisIndex?: number; data: Barra[] }[] }) => op.series.filter((s) => s.xAxisIndex === undefined)
+  const o = { series: reales(construirOpcion(datosG, d) as { series: { xAxisIndex?: number; data: Barra[] }[] }) }
+
+  it('los ceros y los "sin dato" no ocupan hueco', () => {
+    // X: A, C · Y: A, B, C · Z: nada → 3 huecos como máximo.
+    expect(o.series).toHaveLength(3)
+    const grupos = (i: number) => o.series.map((s) => s.data[i]?.grupo ?? null)
+    expect(grupos(1)).toEqual(['A', 'B', 'C'])
+    expect(grupos(2)).toEqual([null, null, null])
+  })
+
+  it('una categoría con menos barras queda centrada entre los huecos', () => {
+    const grupos = (i: number) => o.series.map((s) => s.data[i]?.grupo ?? null)
+    // X tiene 2 de 3 huecos: se desplaza medio hueco (redondeado hacia abajo = 0) → A, C, vacío.
+    expect(grupos(0)).toEqual(['A', 'C', null])
+  })
+
+  it('cada barra conserva el color y el patrón de su grupo, igual en todas las categorías', () => {
+    const estilo = (g: string) => o.series.flatMap((s) => s.data).filter((b) => b?.grupo === g).map((b) => JSON.stringify(b!.itemStyle))
+    for (const g of ['A', 'B', 'C']) expect(new Set(estilo(g)).size).toBe(1)
+    expect(new Set(['A', 'B', 'C'].map((g) => estilo(g)[0])).size).toBe(3)
+  })
+
+  it('con todo en cero sigue habiendo un hueco para que los ejes se dibujen', () => {
+    const ceros = { ...datosG, series: datosG.series.map((s) => ({ ...s, celdas: s.celdas.map(() => celda(0)) })) }
+    const oz = reales(construirOpcion(ceros, d) as { series: { xAxisIndex?: number; data: Barra[] }[] })
+    expect(oz).toHaveLength(1)
+    expect(oz[0]!.data.every((b) => b === null)).toBe(true)
+  })
+
+  it('la barra apilada no se reorganiza: sigue una serie por categoría del campo', () => {
+    const oa = construirOpcion(datosG, { ...d, grafica: 'apilada_100' as const, medida: 'porcentaje' as const }) as { series: { name: string; stack: string }[] }
+    expect(oa.series.map((s) => s.name)).toEqual(['A', 'B', 'C'])
+    expect(oa.series.every((s) => s.stack === 'total')).toBe(true)
   })
 })
