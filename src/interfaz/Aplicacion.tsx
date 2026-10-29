@@ -10,6 +10,8 @@ import './estilos.css'
 
 // ECharts pesa bastante: solo se descarga al abrir "Mis gráficas" y los indicadores cargan sin él.
 const PaginaGraficas = lazy(() => import('./PaginaGraficas').then((m) => ({ default: m.PaginaGraficas })))
+// El mapa (geometría de los 42 municipios) tampoco se descarga hasta abrir "Mapa".
+const PaginaMapa = lazy(() => import('./PaginaMapa').then((m) => ({ default: m.PaginaMapa })))
 
 interface Props {
   /** Otra dirección de publico.json (pruebas); por defecto la del sitio. */
@@ -43,6 +45,10 @@ export function Aplicacion({ url }: Props) {
             <BarraFiltros opciones={opciones} filtros={filtros} onCambio={cambiarFiltros} />
             {ruta === 'indicadores' ? (
               <VistaIndicadores datos={datos} filtros={filtros} />
+            ) : ruta === 'mapa' ? (
+              <Suspense fallback={<p role="status">Cargando mapa…</p>}>
+                <PaginaMapa datos={datos} filtros={filtros} />
+              </Suspense>
             ) : (
               <Suspense fallback={<p role="status">Cargando gráficas…</p>}>
                 <PaginaGraficas datos={datos} filtros={filtros} />

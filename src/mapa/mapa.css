@@ -1,0 +1,377 @@
+/* Pestaña "Mapa". Usa las variables de interfaz/estilos.css (tema claro, azul sobre blanco). */
+:root {
+  /* Rampa secuencial de claro a oscuro (beneficiarios por municipio). */
+  --m-0: #cfe0f5;
+  --m-1: #a3c2ea;
+  --m-2: #6f9bd8;
+  --m-3: #3f70bd;
+  --m-4: #1c4a94;
+  --m-pared: #0e2d62;
+  --m-cero: #f3f7fc;
+  --m-raya: #9db3d3;
+}
+
+.mapa__rejilla {
+  display: grid;
+  gap: 16px;
+  align-items: start;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 900px) {
+  .mapa__rejilla {
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
+  }
+  .mapa-panel,
+  .mapa-ayuda {
+    position: sticky;
+    top: 16px;
+  }
+}
+
+.mapa__principal {
+  min-width: 0;
+}
+
+.mapa__herramientas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.mapa__herramientas .boton--texto {
+  margin-left: 0;
+}
+
+.boton[aria-pressed='true'],
+.boton[aria-pressed='true']:hover:not(:disabled) {
+  color: #f8fbff;
+  background: var(--f-acento);
+}
+
+.boton[aria-pressed='true']:hover:not(:disabled) {
+  background: #0b2d63;
+}
+
+.mapa__figura {
+  margin: 0;
+  padding: 8px 8px 12px;
+  background: var(--f-tarjeta);
+  border: 1px solid var(--f-borde);
+  border-radius: 12px;
+}
+
+.mapa__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 78vh;
+}
+
+.mapa__lectura {
+  min-height: 1.5em;
+  margin: 4px 8px 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--f-acento);
+  text-align: center;
+}
+
+/* Municipios */
+.mapa__municipio {
+  stroke: var(--f-texto);
+  stroke-opacity: 0.7;
+  stroke-width: 0.8;
+  vector-effect: non-scaling-stroke;
+  cursor: pointer;
+}
+
+.mapa__municipio:hover {
+  stroke-opacity: 1;
+  stroke-width: 1.8;
+}
+
+.mapa__municipio:focus {
+  outline: none;
+}
+
+.mapa__municipio:focus-visible {
+  stroke: var(--f-texto);
+  stroke-opacity: 1;
+  stroke-width: 3;
+}
+
+.mapa__municipio--elegido {
+  stroke: var(--f-texto);
+  stroke-opacity: 1;
+  stroke-width: 2.5;
+}
+
+.mapa__clase-0 { fill: var(--m-0); }
+.mapa__clase-1 { fill: var(--m-1); }
+.mapa__clase-2 { fill: var(--m-2); }
+.mapa__clase-3 { fill: var(--m-3); }
+.mapa__clase-4 { fill: var(--m-4); }
+
+/* Sin beneficiarios: fondo claro con rayas (el color solo no basta). */
+.mapa__patron-fondo { fill: var(--m-cero); }
+.mapa__patron-raya { stroke: var(--m-raya); stroke-width: 1.6; }
+
+.mapa__pared {
+  fill: var(--m-pared);
+  stroke: var(--m-pared);
+  stroke-width: 1;
+  pointer-events: none;
+}
+
+.mapa__sombra {
+  fill: var(--f-texto);
+  opacity: 0.28;
+  pointer-events: none;
+}
+
+/* Leyenda */
+.mapa__leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.85rem;
+}
+
+.mapa__leyenda li {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.mapa__muestra {
+  display: inline-block;
+  width: 22px;
+  height: 14px;
+  border: 1px solid var(--f-suave);
+  border-radius: 3px;
+}
+
+.mapa__muestra.mapa__clase-0 { background: var(--m-0); }
+.mapa__muestra.mapa__clase-1 { background: var(--m-1); }
+.mapa__muestra.mapa__clase-2 { background: var(--m-2); }
+.mapa__muestra.mapa__clase-3 { background: var(--m-3); }
+.mapa__muestra.mapa__clase-4 { background: var(--m-4); }
+
+.mapa__muestra--cero {
+  background: repeating-linear-gradient(45deg, var(--m-cero) 0 3px, var(--m-raya) 3px 4.5px);
+}
+
+/* Panel del municipio: columna al lado en pantalla ancha; hoja desde abajo en celular. */
+.mapa-panel,
+.mapa-ayuda {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px;
+  background: var(--f-panel);
+  border: 1px solid var(--f-borde);
+  border-radius: 16px;
+}
+
+.mapa-panel:focus {
+  outline: none;
+}
+
+.mapa-panel:focus-visible {
+  outline: 3px solid var(--f-acento);
+  outline-offset: 2px;
+}
+
+.mapa-ayuda p {
+  margin: 0;
+  color: var(--f-suave);
+}
+
+.mapa-panel__cabecera {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.mapa-panel__titulo {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.mapa-panel__codigo {
+  margin: 2px 0 0;
+  font-size: 0.85rem;
+  color: var(--f-suave);
+}
+
+.mapa-panel__cifras {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 0;
+}
+
+.mapa-panel__cifras div {
+  padding: 8px 12px;
+  background: var(--f-tarjeta);
+  border: 1px solid var(--f-borde);
+  border-radius: 12px;
+}
+
+.mapa-panel__cifras dt {
+  font-size: 0.85rem;
+  color: var(--f-suave);
+}
+
+.mapa-panel__cifras dd {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--f-acento);
+  font-variant-numeric: tabular-nums;
+}
+
+.mapa-panel .tarjeta {
+  --valor-max: 1.75rem;
+  padding: 12px 14px;
+}
+
+.mapa-panel__tarjetas {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.mapa-panel__enlace {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  text-decoration: none;
+}
+
+@media (max-width: 899px) {
+  .mapa-ayuda {
+    display: none;
+  }
+
+  .mapa-panel {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 40;
+    max-height: 50dvh;
+    overflow-y: auto;
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -6px 20px rgba(20, 33, 61, 0.3);
+    animation: mapa-sube 0.2s ease-out;
+  }
+}
+
+@keyframes mapa-sube {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mapa-panel {
+    animation: none;
+  }
+}
+
+/* Lista de municipios */
+.lista-municipios {
+  margin-top: 24px;
+}
+
+.lista-municipios__tabla {
+  max-width: 100%;
+  overflow-x: auto;
+  background: var(--f-tarjeta);
+  border: 1px solid var(--f-borde);
+  border-radius: 12px;
+}
+
+.lista-municipios__tabla:focus-visible {
+  outline: 3px solid var(--f-acento);
+  outline-offset: 2px;
+}
+
+.lista-municipios__orden,
+.lista-municipios__nombre {
+  min-height: 44px;
+  padding: 0 4px;
+  font: inherit;
+  font-weight: 600;
+  color: var(--f-acento);
+  text-align: inherit;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.lista-municipios__nombre {
+  text-decoration: underline;
+}
+
+.lista-municipios__orden:focus-visible,
+.lista-municipios__nombre:focus-visible {
+  outline: 3px solid var(--f-acento);
+  outline-offset: -3px;
+}
+
+.lista-municipios__flecha {
+  margin-left: 6px;
+  font-size: 0.75em;
+}
+
+.lista-municipios__fila--elegida th,
+.lista-municipios__fila--elegida td {
+  background: var(--f-panel);
+}
+
+.lista-municipios__valor {
+  position: relative;
+  display: inline-block;
+  min-width: 7ch;
+  padding: 2px 6px;
+  isolation: isolate;
+}
+
+.lista-municipios__barra {
+  position: absolute;
+  inset: 0 auto 0 0;
+  z-index: -1;
+  max-width: 100%;
+  background: var(--f-acento-suave);
+  border-radius: 4px;
+  opacity: 0.7;
+}
+
+.lista-municipios__tabla tfoot th,
+.lista-municipios__tabla tfoot td {
+  background: var(--f-cabecera);
+}
+
+/* Notas bajo el mapa */
+.mapa__notas {
+  margin-top: 16px;
+}
+
+.mapa__nota {
+  margin: 0 0 6px;
+  font-size: 0.85rem;
+  color: var(--f-suave);
+}
