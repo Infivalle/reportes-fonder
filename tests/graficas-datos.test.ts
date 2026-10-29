@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { CATALOGO, GRAFICAS_POR_TIPO, MEDIDAS_POR_TIPO } from '../src/catalogo/campos'
-import { calcularGrafica } from '../src/graficas/datos'
+import { UMBRAL_SUPRESION, calcularGrafica } from '../src/graficas/datos'
 import { admiteDesglose, admiteMedida, desglosesPosibles, nuevaDef, normalizar, type GraficaDef } from '../src/graficas/definicion'
 import type { FilaPublica } from '../src/publico/tipos'
 import { buscarCampo } from '../src/catalogo/campos'
@@ -101,22 +101,22 @@ describe('desglose y supresión', () => {
     ...muchas(2, { proyecto: 'B', satisfaction: 'Satisfecho' }),
     ...muchas(5, { proyecto: 'B', satisfaction: 'Muy satisfecho' }),
   ]
-  it('barras agrupadas: una serie por grupo; celdas de 1 a 4 se suprimen con "<5"', () => {
+  it('barras agrupadas: una serie por grupo; las celdas pequeñas (1 a 4) se muestran con su cifra real', () => {
     const d = calcularGrafica(filas, def({ desglose: 'proyecto' }))
     expect(d.categorias).toEqual(['Muy satisfecho', 'Satisfecho'])
     const a = d.series.find((s) => s.nombre === 'A')!
     const b = d.series.find((s) => s.nombre === 'B')!
     expect(a.celdas.map((c) => c.texto)).toEqual(['0', '6'])
-    expect(b.celdas.map((c) => c.texto)).toEqual(['5', '<5'])
-    expect(b.celdas[1]!.valor).toBeNull()
-    expect(d.avisos.join(' ')).toMatch(/menos de 5/)
+    expect(b.celdas.map((c) => c.texto)).toEqual(['5', '2'])
+    expect(b.celdas[1]!.valor).toBe(2)
+    expect(d.avisos).toEqual([])
     expect(d.titulo).toBe('Satisfacción por convocatoria')
   })
-  it('el porcentaje es dentro de cada grupo y no se muestra si el grupo tiene menos de 5 respuestas', () => {
+  it('el porcentaje es dentro de cada grupo, también en grupos de menos de 5 respuestas', () => {
     const f = [...muchas(8, { proyecto: 'A', satisfaction: 'Satisfecho' }), ...muchas(3, { proyecto: 'B', satisfaction: 'Satisfecho' })]
     const d = calcularGrafica(f, def({ desglose: 'proyecto', medida: 'porcentaje' }))
     expect(d.series.find((s) => s.nombre === 'A')!.celdas[0]!.texto).toBe('100 %')
-    expect(d.series.find((s) => s.nombre === 'B')!.celdas[0]!.texto).toBe('<5')
+    expect(d.series.find((s) => s.nombre === 'B')!.celdas[0]!.texto).toBe('100 %')
   })
   it('apilada al 100 % con desglose: una barra por grupo', () => {
     const d = calcularGrafica(filas, def({ grafica: 'apilada_100', medida: 'porcentaje', desglose: 'proyecto' }))
@@ -163,14 +163,14 @@ describe('campo numérico', () => {
     const d = calcularGrafica([pct(null), pct(-5), pct(50)], def({ campo: 'credit_used_percentage', grafica: 'histograma', medida: 'promedio' }))
     expect(d.base).toBe(1)
   })
-  it('medida por categoría: promedio y mediana; grupos con menos de 5 se suprimen', () => {
+  it('medida por categoría: promedio y mediana, también en grupos pequeños', () => {
     const f = [
       ...[10, 20, 30, 40, 50].map((v) => fila({ proyecto: 'A', credit_used_percentage: v })),
       ...muchas(3, { proyecto: 'B', credit_used_percentage: 90 }),
     ]
     const prom = calcularGrafica(f, def({ campo: 'credit_used_percentage', grafica: 'barras', medida: 'promedio', desglose: 'proyecto' }))
     expect(prom.categorias).toEqual(['A', 'B'])
-    expect(textos(prom)).toEqual(['30 %', '<5'])
+    expect(textos(prom)).toEqual(['30 %', '90 %'])
     expect(prom.titulo).toBe('Promedio de crédito utilizado (%) por convocatoria')
     const med = calcularGrafica(f, def({ campo: 'credit_used_percentage', grafica: 'barras', medida: 'maximo', desglose: 'proyecto' }))
     expect(textos(med)[0]).toBe('50 %')
@@ -179,5 +179,11 @@ describe('campo numérico', () => {
     const d = calcularGrafica([pct(10)], def({ campo: 'credit_used_percentage', grafica: 'barras', medida: 'promedio' }))
     expect(d.series).toEqual([])
     expect(d.avisos[0]).toMatch(/Elija un campo/)
+  })
+})
+
+describe('cifras pequeñas', () => {
+  it('por decisión de InfiValle no se suprime ninguna (umbral 0)', () => {
+    expect(UMBRAL_SUPRESION).toBe(0)
   })
 })

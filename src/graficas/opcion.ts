@@ -9,6 +9,9 @@ import type { GraficaDef } from './definicion'
 /** Tonos de las tarjetas (--t-*) y algunos más para series adicionales. Todos legibles sobre fondo claro. */
 export const PALETA = ['#3a69b8', '#2f8f94', '#5d9a3a', '#c98a1b', '#7b5ea7', '#b5533c', '#5b6b8c', '#8a9a3a'] as const
 
+/** Con más series que esto la tarjeta compacta no lleva leyenda ni cifras sobre las barras: no caben. */
+export const MAX_SERIES_LEGIBLES = 4
+
 const TEXTO = '#14213d'
 const SUAVE = '#44546f'
 const BORDE = '#c5d7ee'
@@ -66,8 +69,10 @@ export function construirOpcion(datos: DatosGrafica, def: GraficaDef, compacta =
       trigger: def.grafica === 'dona' ? 'item' : 'axis',
       confine: true,
       formatter: (raw: ParametroTooltip | ParametroTooltip[]) => {
-        const ps = Array.isArray(raw) ? raw : [raw]
-        const cabecera = escapar(ps[0]?.name ?? '')
+        const todos = Array.isArray(raw) ? raw : [raw]
+        // Con muchas series el cursor listaría decenas de ceros: se omiten (la tabla los tiene todos).
+        const ps = todos.length > MAX_SERIES_LEGIBLES ? todos.filter((p) => (p.data?.value ?? 0) > 0) : todos
+        const cabecera = escapar(todos[0]?.name ?? '')
         const lineas = ps.map((p) => `${p.marker ?? ''} ${escapar(p.seriesName ?? '')}: <b>${escapar(textoDe(p))}</b>`)
         return [cabecera, ...lineas].join('<br/>')
       },
@@ -97,6 +102,9 @@ export function construirOpcion(datos: DatosGrafica, def: GraficaDef, compacta =
   const apilada = def.grafica === 'apilada_100'
   const porcentaje = datos.unidad === 'porcentaje'
   const inclinar = !horizontal && datos.categorias.length > 4
+  const pocasSeries = datos.series.length <= MAX_SERIES_LEGIBLES
+  // La leyenda de una tarjeta compacta con muchos grupos taparía las barras: se oculta y se lee con el cursor o ampliando.
+  const leyenda = varias && (pocasSeries || !compacta)
   const eje = (tipo: 'category' | 'value') =>
     tipo === 'category'
       ? {
@@ -123,8 +131,8 @@ export function construirOpcion(datos: DatosGrafica, def: GraficaDef, compacta =
 
   return {
     ...comun,
-    legend: varias ? { top: 0, textStyle: { color: TEXTO } } : undefined,
-    grid: { left: 8, right: 24, top: varias ? 44 : 20, bottom: 8, containLabel: true },
+    legend: leyenda ? { type: 'scroll' as const, top: 0, textStyle: { color: TEXTO } } : undefined,
+    grid: { left: 8, right: 24, top: leyenda ? 44 : 20, bottom: 8, containLabel: true },
     xAxis: horizontal ? eje('value') : eje('category'),
     yAxis: horizontal ? eje('category') : eje('value'),
     series: datos.series.map((s) => ({
@@ -134,10 +142,11 @@ export function construirOpcion(datos: DatosGrafica, def: GraficaDef, compacta =
       ...(def.grafica === 'histograma' ? { barCategoryGap: '8%' } : {}),
       data: s.celdas.map(dato),
       label: {
-        show: true,
+        // Con muchos grupos las cifras se montarían unas sobre otras: se quitan (están en el cursor y en la tabla).
+        show: pocasSeries,
         position: apilada ? ('inside' as const) : horizontal ? ('right' as const) : ('top' as const),
         color: apilada ? '#ffffff' : TEXTO,
-        formatter: textoDe,
+        formatter: (p: { data?: DatoConTexto }) => (varias && p.data?.value === 0 ? '' : textoDe(p)),
       },
     })),
   }

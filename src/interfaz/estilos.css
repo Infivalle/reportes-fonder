@@ -495,8 +495,7 @@ html body {
   outline-offset: 2px;
 }
 
-.grafica__tabla,
-.grafica__detalle .tabla-datos {
+.grafica__tabla {
   margin-top: 8px;
 }
 
@@ -507,7 +506,32 @@ html body {
 }
 
 .grafica__tabla {
+  max-width: 100%;
   overflow-x: auto;
+}
+
+.grafica__tabla:focus-visible {
+  outline: 3px solid var(--f-acento);
+  outline-offset: 2px;
+}
+
+/* La primera columna queda fija al desplazar una tabla ancha. */
+.tabla-datos th[scope='row'] {
+  position: sticky;
+  left: 0;
+  background: var(--f-tarjeta);
+}
+
+.tabla-datos th,
+.tabla-datos td {
+  white-space: nowrap;
+}
+
+/* Nada dentro de una tarjeta o de la ventana puede ensancharla. */
+.panel__cuerpo > *,
+.grafica {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .tabla-datos th,

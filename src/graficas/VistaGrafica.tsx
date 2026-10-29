@@ -4,7 +4,7 @@ import { formatoEntero } from '../indicadores/formato'
 import type { DatosGrafica } from './datos'
 import type { GraficaDef } from './definicion'
 import { Echarts } from './Echarts'
-import { altoGrafica, construirOpcion } from './opcion'
+import { MAX_SERIES_LEGIBLES, altoGrafica, construirOpcion } from './opcion'
 import '../interfaz/estilos.css'
 
 interface Props {
@@ -37,32 +37,71 @@ function encabezadoFilas(def: GraficaDef): string {
   return campo?.etiqueta ?? 'Categoría'
 }
 
-function Tabla({ datos, def, visible }: { datos: DatosGrafica; def: GraficaDef; visible: boolean }) {
-  const etiquetaFilas = encabezadoFilas(def)
+/** Con más series que esto la tabla se pone de lado (un grupo por fila): 20 columnas no caben en una tarjeta. */
+const MAX_COLUMNAS_TABLA = 6
+
+/** Nombre del campo que define las series (los grupos de comparación). */
+function encabezadoSeries(def: GraficaDef): string {
+  const campo = buscarCampo(def.campo)
+  const desglose = def.desglose === null ? undefined : buscarCampo(def.desglose)
+  if (def.grafica === 'apilada_100') return campo?.etiqueta ?? 'Serie'
+  return desglose?.etiqueta ?? 'Serie'
+}
+
+function Tabla({ datos, def }: { datos: DatosGrafica; def: GraficaDef }) {
+  const deLado = datos.series.length > MAX_COLUMNAS_TABLA
   return (
-    <div className={visible ? 'grafica__tabla' : undefined}>
+    // Un contenedor propio con desplazamiento: una tabla ancha no debe romper la tarjeta ni la ventana ampliada.
+    <div className="grafica__tabla" tabIndex={0} role="region" aria-label={`Tabla de datos: ${datos.titulo}`}>
       <table className="tabla-datos">
         <caption className="solo-lectores">{datos.titulo}</caption>
-        <thead>
-          <tr>
-            <th scope="col">{etiquetaFilas}</th>
-            {datos.series.map((s) => (
-              <th key={s.nombre} scope="col">
-                {s.nombre}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {datos.categorias.map((c, i) => (
-            <tr key={c}>
-              <th scope="row">{c}</th>
+        {deLado ? (
+          <>
+            <thead>
+              <tr>
+                <th scope="col">{encabezadoSeries(def)}</th>
+                {datos.categorias.map((c) => (
+                  <th key={c} scope="col">
+                    {c}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
               {datos.series.map((s) => (
-                <td key={s.nombre}>{s.celdas[i]?.texto ?? ''}</td>
+                <tr key={s.nombre}>
+                  <th scope="row">{s.nombre}</th>
+                  {datos.categorias.map((c, i) => (
+                    <td key={c}>{s.celdas[i]?.texto ?? ''}</td>
+                  ))}
+                </tr>
               ))}
-            </tr>
-          ))}
-        </tbody>
+            </tbody>
+          </>
+        ) : (
+          <>
+            <thead>
+              <tr>
+                <th scope="col">{encabezadoFilas(def)}</th>
+                {datos.series.map((s) => (
+                  <th key={s.nombre} scope="col">
+                    {s.nombre}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {datos.categorias.map((c, i) => (
+                <tr key={c}>
+                  <th scope="row">{c}</th>
+                  {datos.series.map((s) => (
+                    <td key={s.nombre}>{s.celdas[i]?.texto ?? ''}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </>
+        )}
       </table>
     </div>
   )
@@ -109,15 +148,19 @@ export function VistaGrafica({ datos, def, compacta = false, acciones, nota }: P
         <p className="grafica__ayuda">Las porciones pequeñas no llevan etiqueta: pase el cursor, amplíe la gráfica o abra la tabla.</p>
       )}
 
+      {compacta && def.grafica !== 'dona' && opcion !== null && datos.series.length > MAX_SERIES_LEGIBLES && (
+        <p className="grafica__ayuda">Con tantos grupos no caben la leyenda ni las cifras: pase el cursor sobre las barras, amplíe la gráfica o abra la tabla.</p>
+      )}
+
       {resumen !== null && <p className="grafica__resumen">{resumen}</p>}
 
       {!sinDatos &&
         (def.grafica === 'tabla' ? (
-          <Tabla datos={datos} def={def} visible />
+          <Tabla datos={datos} def={def} />
         ) : (
           <details className="grafica__detalle">
             <summary>Ver los datos en una tabla</summary>
-            <Tabla datos={datos} def={def} visible={false} />
+            <Tabla datos={datos} def={def} />
           </details>
         ))}
     </figure>

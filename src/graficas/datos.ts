@@ -2,13 +2,16 @@
  * Datos de una gráfica del constructor: filas ya filtradas + definición → categorías, series y
  * textos listos para dibujar y para la tabla alternativa. No depende de React ni de ECharts.
  *
- * Reglas de protección: con desglose, una celda de 1 a 4 beneficiarios no se muestra ("<5"), y el
- * porcentaje de un grupo con menos de 5 respuestas tampoco (revelaría el conteo). Una distribución
- * de un solo campo no se suprime: es la misma que ya muestran los indicadores.
+ * Cifras pequeñas: por decisión de InfiValle las gráficas muestran siempre la cifra real, también
+ * cuando son 1 a 4 beneficiarios (los mismos datos ya están en publico.json, fila por fila). Subir
+ * `UMBRAL_SUPRESION` a 5 vuelve a mostrar "<5" en las celdas de 1 a 4 y en los porcentajes de grupos
+ * con menos de 5 respuestas, sin tocar nada más.
  */
+export const UMBRAL_SUPRESION = 0
+
 import { buscarCampo, type CampoCatalogo } from '../catalogo/campos'
 import { ultimaPorBeneficiario } from '../indicadores/calcular'
-import { etiquetaCategoria, MINIMO_CELDA, ordenarCategorias, valoresDe } from '../indicadores/consulta'
+import { etiquetaCategoria, ordenarCategorias, valoresDe } from '../indicadores/consulta'
 import { formatoEntero, formatoPorcentaje } from '../indicadores/formato'
 import type { FilaPublica } from '../publico/tipos'
 import type { GraficaDef } from './definicion'
@@ -40,7 +43,7 @@ export interface DatosGrafica {
   avisos: string[]
 }
 
-const SUPRIMIDA: CeldaGrafica = { valor: null, texto: `<${MINIMO_CELDA}` }
+const SUPRIMIDA: CeldaGrafica = { valor: null, texto: `<${UMBRAL_SUPRESION}` }
 const SIN_DATO: CeldaGrafica = { valor: null, texto: 'Sin dato' }
 
 const celdaConteo = (n: number): CeldaGrafica => ({ valor: n, texto: formatoEntero(n) })
@@ -139,13 +142,13 @@ function numerico(filas: readonly FilaPublica[], def: GraficaDef, campo: CampoCa
   let suprimidos = 0
   const celdas = orden.map((g) => {
     const xs = grupos.get(g) ?? []
-    if (xs.length < MINIMO_CELDA) {
+    if (xs.length < UMBRAL_SUPRESION) {
       suprimidos += 1
       return SUPRIMIDA
     }
     return celdaPct(medidaNumerica(resumir(xs), def.medida))
   })
-  if (suprimidos > 0) avisos.push(`Los grupos con menos de ${MINIMO_CELDA} respuestas no se muestran ("<${MINIMO_CELDA}").`)
+  if (suprimidos > 0) avisos.push(`Los grupos con menos de ${UMBRAL_SUPRESION} respuestas no se muestran ("<${UMBRAL_SUPRESION}").`)
   return {
     titulo: `${NOMBRE_MEDIDA[def.medida] ?? 'Promedio'} de ${campo.etiqueta.toLowerCase()} por ${desglose.etiqueta.toLowerCase()}`,
     categorias: orden.map((g) => etiquetaCategoria(desglose.clave, g)),
@@ -192,7 +195,7 @@ function discreto(filas: readonly FilaPublica[], def: GraficaDef, campo: CampoCa
   const valorCelda = (g: string, v: string): CeldaGrafica => {
     const n = celdas.get(g)?.get(v) ?? 0
     const denom = respondieron.get(g) ?? 0
-    if (desglose && ((n > 0 && n < MINIMO_CELDA) || (comoPct && denom < MINIMO_CELDA))) {
+    if (desglose && ((n > 0 && n < UMBRAL_SUPRESION) || (comoPct && denom < UMBRAL_SUPRESION))) {
       suprimidas = true
       return SUPRIMIDA
     }
@@ -213,7 +216,7 @@ function discreto(filas: readonly FilaPublica[], def: GraficaDef, campo: CampoCa
     }))
   }
 
-  if (suprimidas) avisos.push(`Las cifras de menos de ${MINIMO_CELDA} beneficiarios no se muestran ("<${MINIMO_CELDA}").`)
+  if (suprimidas) avisos.push(`Las cifras de menos de ${UMBRAL_SUPRESION} beneficiarios no se muestran ("<${UMBRAL_SUPRESION}").`)
   if (campo.tipo === 'multivalor' && comoPct) avisos.push('Cada beneficiario puede marcar varias opciones: los porcentajes pueden sumar más de 100 %.')
 
   return {

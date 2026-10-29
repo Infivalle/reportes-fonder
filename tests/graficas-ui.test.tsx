@@ -104,13 +104,14 @@ describe('PaginaGraficas: constructor en el panel', () => {
     expect(within(panel).getByRole('heading', { level: 3, name: 'Destino del crédito (mejoras logradas)' })).toBeInTheDocument()
   })
 
-  it('comparar por otro campo agrupa y suprime las cifras de menos de 5', async () => {
+  it('comparar por otro campo agrupa y muestra las cifras reales, también las de menos de 5', async () => {
     render(<PaginaGraficas datos={datos()} filtros={SIN} />)
     const panel = await abrirEditor()
     await userEvent.selectOptions(within(panel).getByLabelText('Comparar por'), 'Convocatoria')
     expect(within(panel).getByRole('heading', { level: 3, name: 'Satisfacción por convocatoria' })).toBeInTheDocument()
-    expect(within(panel).getByRole('note')).toHaveTextContent(/menos de 5 beneficiarios no se muestran/)
-    expect(within(panel).getByRole('row', { name: /^Satisfecho/, hidden: true })).toHaveTextContent('<5')
+    expect(within(panel).queryByRole('note')).not.toBeInTheDocument()
+    const fila = within(panel).getByRole('row', { name: /^Satisfecho/, hidden: true })
+    expect(within(fila).getAllByRole('cell', { hidden: true }).map((c) => c.textContent)).toEqual(['0', '2'])
   })
 
   it('la medida por categoría de un campo numérico exige elegir el campo de comparación', async () => {
@@ -156,5 +157,32 @@ describe('PaginaGraficas: constructor en el panel', () => {
     await userEvent.selectOptions(within(panel).getByLabelText('Tipo de gráfica'), 'Solo tabla')
     expect(within(panel).queryByTestId('lienzo')).not.toBeInTheDocument()
     expect(within(panel).getByRole('table', { name: 'Satisfacción' })).toBeVisible()
+  })
+})
+
+describe('tabla de datos con muchos grupos', () => {
+  const MUN = ['76001', '76109', '76111', '76147', '76233', '76243', '76364', '76400']
+  function datosMuchosMunicipios(): PublicoJson {
+    const d = datos()
+    return { ...d, asesorias: d.asesorias.map((f, i) => ({ ...f, municipio_codigo: MUN[i % MUN.length]! })) }
+  }
+
+  it('se pone de lado (un grupo por fila) para no desbordar la tarjeta', async () => {
+    render(<PaginaGraficas datos={datosMuchosMunicipios()} filtros={SIN} />)
+    const panel = await abrirEditor()
+    await userEvent.selectOptions(within(panel).getByLabelText('Comparar por'), 'Municipio')
+    const tabla = within(panel).getByRole('table', { name: 'Satisfacción por municipio', hidden: true })
+    // Primera columna = el campo de comparación; las demás, las categorías de satisfacción.
+    expect(within(tabla).getAllByRole('columnheader', { hidden: true }).map((c) => c.textContent)).toEqual(['Municipio', 'Muy satisfecho', 'Satisfecho'])
+    expect(within(tabla).getAllByRole('row', { hidden: true })).toHaveLength(1 + MUN.length)
+  })
+
+  it('la tabla va en un contenedor con desplazamiento propio, accesible con teclado', async () => {
+    render(<PaginaGraficas datos={datosMuchosMunicipios()} filtros={SIN} />)
+    const panel = await abrirEditor()
+    await userEvent.selectOptions(within(panel).getByLabelText('Comparar por'), 'Municipio')
+    const region = within(panel).getByRole('region', { name: 'Tabla de datos: Satisfacción por municipio', hidden: true })
+    expect(region).toHaveClass('grafica__tabla')
+    expect(region).toHaveAttribute('tabindex', '0')
   })
 })

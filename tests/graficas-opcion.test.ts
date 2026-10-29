@@ -36,12 +36,12 @@ describe('opción de ECharts', () => {
     expect(o.animation).toBe(false)
     expect(o.aria.enabled).toBe(true)
   })
-  it('con comparación hay una serie por grupo y leyenda; las celdas suprimidas no tienen valor', () => {
+  it('con comparación hay una serie por grupo y leyenda; las celdas pequeñas conservan su valor', () => {
     const o = opcion(def({ desglose: 'proyecto' }))
     expect(o.series.map((s) => s.name)).toEqual(['A', 'B'])
     expect(o.legend).toBeDefined()
-    expect(o.series[1]!.data.map((d) => d.texto)).toEqual(['0', '<5'])
-    expect(o.series[1]!.data[1]!.value).toBeNull()
+    expect(o.series[1]!.data.map((d) => d.texto)).toEqual(['0', '2'])
+    expect(o.series[1]!.data[1]!.value).toBe(2)
   })
   it('barras horizontales: ejes cambiados y categorías de arriba abajo', () => {
     const o = opcion(def({ grafica: 'barras_horizontales' }))
@@ -99,5 +99,41 @@ describe('dona en tarjeta compacta', () => {
     expect(o.legend.show).not.toBe(false)
     expect(o.legend.type).toBe('scroll')
     expect(o.series[0]!.minShowLabelAngle).toBe(0)
+  })
+})
+
+describe('barras con muchos grupos en tarjeta compacta', () => {
+  const grupos = Array.from({ length: 8 }, (_, i) => `G${i}`)
+  const datosMuchos = {
+    titulo: 'S por G',
+    categorias: ['X', 'Y'],
+    series: grupos.map((g, i) => ({ nombre: g, celdas: [{ valor: i, texto: String(i) }, { valor: 0, texto: '0' }] })),
+    unidad: 'conteo' as const,
+    base: 28,
+    total: 28,
+    resumen: null,
+    avisos: [],
+  }
+  const d = { campo: 'satisfaction', grafica: 'barras' as const, medida: 'conteo' as const, desglose: 'proyecto' }
+  type Opc = { legend?: { type: string }; grid: { top: number }; series: { label: { show: boolean } }[] }
+
+  it('sin leyenda ni cifras sobre las barras (no caben)', () => {
+    const o = construirOpcion(datosMuchos, d, true) as Opc
+    expect(o.legend).toBeUndefined()
+    expect(o.grid.top).toBe(20)
+    expect(o.series.every((s) => s.label.show === false)).toBe(true)
+  })
+
+  it('a tamaño completo la leyenda se desplaza en vez de tapar las barras', () => {
+    const o = construirOpcion(datosMuchos, d) as Opc
+    expect(o.legend?.type).toBe('scroll')
+    expect(o.grid.top).toBe(44)
+  })
+
+  it('con pocos grupos conserva leyenda y cifras también en la tarjeta', () => {
+    const pocos = { ...datosMuchos, series: datosMuchos.series.slice(0, 3) }
+    const o = construirOpcion(pocos, d, true) as Opc
+    expect(o.legend).toBeDefined()
+    expect(o.series.every((s) => s.label.show)).toBe(true)
   })
 })
