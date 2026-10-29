@@ -26,7 +26,7 @@ function fila(o: Partial<FilaPublica>): FilaPublica {
     satisfaction: 'Muy satisfecho', need_another_credit: null, current_employees: null, rango_ingreso_mensual: null,
     rango_costos_fijos: null, rango_costos_variables: null, rango_cuota_mensual: null, rango_reserva_emergencia: null,
     rango_ventas_total: null, rango_clientes_mes: null, rango_ventas_mes: null, credit_used_percentage: 60, debt_level: null,
-    mejoras: ['CT'], canales: [], atipica: false, ...o,
+    mejoras: ['CT'], canales: [], atipica: false, linea: null, ...o,
   }
 }
 const muchas = (k: number, o: Partial<FilaPublica>) => Array.from({ length: k }, () => fila(o))

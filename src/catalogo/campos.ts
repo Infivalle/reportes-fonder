@@ -6,6 +6,7 @@
  * Las claves son las de `FilaPublica` (snake_case), no las columnas del TSV.
  */
 import type { FilaPublica } from '../publico/tipos'
+import { LINEAS } from '../lineas/lineas'
 import { CANALES, MEJORAS } from './codigos'
 import { OPCIONES_FORMULARIO } from './opciones'
 
@@ -59,6 +60,7 @@ export const CATALOGO: readonly CampoCatalogo[] = [
   { clave: 'proyecto', etiqueta: 'Convocatoria', grupo: 'general', tipo: 'categorico', capa: 'publica' },
   { clave: 'municipio_codigo', etiqueta: 'Municipio', grupo: 'general', tipo: 'categorico', capa: 'publica' },
   { clave: 'mes', etiqueta: 'Mes de la asesoría', grupo: 'general', tipo: 'fecha', capa: 'publica' },
+  { clave: 'linea', etiqueta: 'Línea de crédito', grupo: 'general', tipo: 'categorico', opciones: LINEAS, capa: 'publica' },
 
   // Resultados
   { clave: 'satisfaction', etiqueta: 'Satisfacción', grupo: 'resultados', tipo: 'ordinal', opciones: op('satisfaction'), capa: 'publica' },

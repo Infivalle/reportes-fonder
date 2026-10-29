@@ -33,6 +33,7 @@ function fila(n: number, extra: Partial<FilaVista> = {}): FilaVista {
     mejoras: ['CT'],
     canales: ['TF'],
     atipica: false,
+    linea: 'Línea 1',
     ...extra,
   }
 }
@@ -115,6 +116,30 @@ describe('verificarPublico', () => {
     expect(problemasPublico(p).join(' ')).toContain('mínimo')
   })
 
+  it('acepta las dos líneas y la línea vacía', () => {
+    for (const linea of ['Línea 1', 'Línea 2', null]) {
+      const p = copia(valido())
+      if (p.asesorias[0]) p.asesorias[0].linea = linea
+      expect(problemasPublico(p), String(linea)).toEqual([])
+    }
+  })
+
+  it('rechaza una línea que no sea Línea 1 ni Línea 2 (p. ej. un dato personal que se cuele)', () => {
+    for (const linea of ['Línea 3', 'Operador X', 'Juan']) {
+      const p = copia(valido())
+      if (p.asesorias[0]) p.asesorias[0].linea = linea
+      expect(problemasPublico(p).join(' '), linea).toContain('no es una línea válida')
+    }
+  })
+
+  it('rechaza el año y el valor del desembolso aunque lleguen con otro nombre', () => {
+    for (const clave of ['anio', 'valor_desembolso', 'clave_documento']) {
+      const p = copia(valido())
+      Object.assign(p.asesorias[0] ?? {}, { [clave]: 'x' })
+      expect(problemasPublico(p).join(' '), clave).toContain('clave no permitida')
+    }
+  })
+
   it('verificarPublico lanza un error que lista los problemas', () => {
     const p = copia(valido())
     Object.assign(p.asesorias[0] ?? {}, { documento: '1' })
@@ -128,6 +153,11 @@ describe('ensamblarPublico', () => {
     expect(p.asesorias[0]?.credit_used_percentage).toBe(100)
     expect(p.asesorias[0]?.debt_level).toBe(12.5)
     expect(p.totales.asesorias_conservadas).toBe(3)
+  })
+
+  it('la línea pasa tal cual de la vista a las filas públicas', () => {
+    const p = ensamblarPublico([fila(1, { linea: 'Línea 2' }), fila(2, { linea: null })], [], [], undefined, { generadoEn: 'x', aleatorio: () => 0.5 })
+    expect(p.asesorias.map((f) => f.linea).sort()).toEqual(['Línea 2', null])
   })
 
   it('sin datos de meta deja la fecha de corte vacía', () => {

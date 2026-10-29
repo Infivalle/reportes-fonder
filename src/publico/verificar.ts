@@ -1,3 +1,4 @@
+import { LINEAS } from '../lineas/lineas.ts'
 import { MINIMO_GRUPO, RANGOS_CONTEO, RANGOS_MONTO } from './rangos.ts'
 import { METRICAS_AGREGADO, type PublicoJson } from './tipos.ts'
 
@@ -37,7 +38,7 @@ const CLAVES_FILA = new Set([
   'resource_manager', 'payments_on_schedule', 'satisfaction', 'need_another_credit', 'current_employees',
   'rango_ingreso_mensual', 'rango_costos_fijos', 'rango_costos_variables', 'rango_cuota_mensual',
   'rango_reserva_emergencia', 'rango_ventas_total', 'rango_clientes_mes', 'rango_ventas_mes',
-  'credit_used_percentage', 'debt_level', 'mejoras', 'canales', 'atipica',
+  'credit_used_percentage', 'debt_level', 'mejoras', 'canales', 'atipica', 'linea',
 ])
 
 const CLAVES_AGREGADO = new Set([
@@ -89,6 +90,10 @@ export function problemasPublico(p: PublicoJson): string[] {
     for (const c of RANGOS_DE_CONTEO) {
       const v = f[c]
       if (v !== null && !(RANGOS_CONTEO as readonly string[]).includes(v)) problemas.push(`${ruta}.${c}: "${v}" no es un rango válido`)
+    }
+    // La línea es lo único que sale del Excel de desembolsos: solo "Línea 1", "Línea 2" o vacío
+    if (f.linea !== null && !(LINEAS as readonly string[]).includes(f.linea)) {
+      problemas.push(`${ruta}.linea: "${f.linea}" no es una línea válida`)
     }
     // Solo dos campos numéricos permitidos: porcentajes
     for (const [k, v] of Object.entries(f)) {

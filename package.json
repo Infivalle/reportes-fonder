@@ -18,7 +18,8 @@
     "test:rls": "vitest run tests/rls",
     "build:functions": "node scripts/build-functions.mjs",
     "cargar": "tsx scripts/cargar-local.ts",
-    "generar-publico": "tsx scripts/generar-publico.ts"
+    "generar-publico": "tsx scripts/generar-publico.ts",
+    "preparar-lineas": "node scripts/preparar-lineas.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",
@@ -40,6 +41,7 @@
     "esbuild": "^0.28.2",
     "eslint": "^10.13.0",
     "eslint-plugin-react-hooks": "^7.1.1",
+    "exceljs": "^4.4.0",
     "globals": "^17.13.0",
     "jsdom": "^29.1.1",
     "pg": "^8.23.1",

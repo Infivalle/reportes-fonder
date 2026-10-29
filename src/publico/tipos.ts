@@ -27,6 +27,8 @@ export interface FilaVista {
   mejoras: string[]
   canales: string[]
   atipica: boolean
+  /** 'Línea 1' | 'Línea 2'; null si la persona no está en el Excel de beneficiarios netos. */
+  linea: string | null
 }
 
 export const METRICAS_AGREGADO = [

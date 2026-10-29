@@ -41,7 +41,7 @@ function fila(o: Partial<FilaPublica>): FilaPublica {
     debt_level: 10,
     mejoras: [],
     canales: [],
-    atipica: false,
+    atipica: false, linea: null,
     ...o,
   }
 }
