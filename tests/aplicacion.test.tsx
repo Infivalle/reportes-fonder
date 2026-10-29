@@ -56,6 +56,12 @@ afterEach(() => {
 })
 
 describe('Aplicacion: estados', () => {
+  it('pide publico.json revalidando con el servidor, para no mostrar datos viejos tras una carga', async () => {
+    simularFetch()
+    render(<Aplicacion />)
+    await screen.findByRole('heading', { name: 'Indicadores de las asesorías' })
+    expect(vi.mocked(fetch)).toHaveBeenCalledWith(expect.stringMatching(/publico\.json$/), expect.objectContaining({ cache: 'no-cache' }))
+  })
   it('muestra el error si publico.json no carga', async () => {
     simularFetch({}, false)
     render(<Aplicacion />)

@@ -17,7 +17,9 @@ export function usePublico(url: string = `${import.meta.env.BASE_URL}publico.jso
 
   useEffect(() => {
     const control = new AbortController()
-    fetch(url, { signal: control.signal })
+    // 'no-cache': el navegador pregunta al servidor si el archivo cambió antes de usar su copia.
+    // Sin esto, tras cada carga de datos se podía seguir viendo el publico.json anterior hasta 10 minutos.
+    fetch(url, { signal: control.signal, cache: 'no-cache' })
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`)
         return r.json() as Promise<PublicoJson | PublicoVacio>
