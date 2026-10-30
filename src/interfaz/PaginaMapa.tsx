@@ -2,6 +2,7 @@ import { useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { formatoEntero } from '../indicadores/formato'
 import { calcularMapa, clasesDeColor, detalleMunicipio } from '../mapa/datos'
 import { ID_TABLA_MUNICIPIOS, ListaMunicipios } from '../mapa/ListaMunicipios'
+import { EtiquetaCursor } from '../mapa/EtiquetaCursor'
 import { LeyendaMapa, MapaValle } from '../mapa/MapaValle'
 import { PanelMunicipio } from '../mapa/PanelMunicipio'
 import { BENEFICIARIOS_POR_MUNICIPIO } from '../mapa/totalesMunicipio'
@@ -33,6 +34,7 @@ export function PaginaMapa({ datos, filtros }: Props) {
   const { proyecto, mes } = filtros
   const filtrosMapa = useMemo(() => ({ proyecto, mes }), [proyecto, mes])
   const mapa = useMemo(() => calcularMapa(datos, filtrosMapa), [datos, filtrosMapa])
+  const nombres = useMemo(() => new Map(mapa.municipios.map((m) => [m.codigo, m.nombre])), [mapa.municipios])
   const clases = useMemo(() => clasesDeColor(mapa.municipios.map((m) => m.beneficiarios)), [mapa.municipios])
   const detalle = useMemo(
     () => (seleccionado === null ? null : detalleMunicipio(datos, filtrosMapa, seleccionado)),
@@ -111,6 +113,7 @@ export function PaginaMapa({ datos, filtros }: Props) {
                 ? 'Pase el cursor o toque un municipio para ver su detalle.'
                 : `${lectura.nombre}: ${formatoEntero(lectura.beneficiarios)} ${lectura.beneficiarios === 1 ? 'beneficiario' : 'beneficiarios'}`}
             </figcaption>
+            <EtiquetaCursor contenedor={figura} nombres={nombres} />
           </figure>
 
           <LeyendaMapa clases={clases} />

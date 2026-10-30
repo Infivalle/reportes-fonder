@@ -213,7 +213,7 @@ export const MAX_CLASES = 5
  * valores distintos). Con tramos iguales, un solo municipio grande (Cali) dejaría a casi todos los
  * demás en el mismo color; con cuantiles cada color agrupa una parte parecida de municipios.
  * Los tramos cubren de 1 al máximo sin huecos ni solapes. El 0 no es un tramo: se pinta aparte
- * como "sin beneficiarios".
+ * como "sin asesorías".
  */
 export function clasesDeColor(conteos: readonly number[]): ClaseColor[] {
   const positivos = conteos.filter((n) => Number.isFinite(n) && n >= 1).sort((a, b) => a - b)
@@ -231,7 +231,7 @@ export function clasesDeColor(conteos: readonly number[]): ClaseColor[] {
   return clases
 }
 
-/** Índice de la clase a la que pertenece un conteo; null para 0 (sin beneficiarios). */
+/** Índice de la clase a la que pertenece un conteo; null para 0 (sin asesorías). */
 export function claseDe(conteo: number, clases: readonly ClaseColor[]): number | null {
   if (conteo < 1) return null
   const c = clases.find((x) => conteo >= x.desde && conteo <= x.hasta)

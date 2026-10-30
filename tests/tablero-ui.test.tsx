@@ -58,7 +58,14 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-const EJEMPLO = ['Satisfacción', 'Resultados esperados', 'Destino del crédito (mejoras logradas)']
+const EJEMPLO = [
+  'Municipio',
+  'Destino del crédito (mejoras logradas) por municipio',
+  'Satisfacción',
+  'Canales de venta',
+  '¿Lleva registros contables?',
+  'Empleados actuales',
+]
 const tarjetas = () => within(screen.getByRole('list', { name: 'Gráficas del tablero' })).getAllByRole('listitem')
 const titulos = () => tarjetas().map((t) => within(t).getByRole('heading', { level: 3 }).textContent)
 

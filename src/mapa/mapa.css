@@ -70,6 +70,7 @@
 }
 
 .mapa__figura {
+  position: relative;
   margin: 0;
   padding: 8px 8px 12px;
   background: var(--f-tarjeta);
@@ -91,6 +92,29 @@
   font-weight: 600;
   color: var(--f-acento);
   text-align: center;
+}
+
+/* Etiqueta con el nombre del municipio junto al cursor. */
+.mapa__etiqueta {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  max-width: 14rem;
+  padding: 4px 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: #fff;
+  background: var(--f-texto);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(20, 33, 61, 0.3);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.mapa__etiqueta[hidden] {
+  display: none;
 }
 
 /* Municipios */
@@ -134,7 +158,7 @@
 .mapa__degrade-oscuro-3 { stop-color: var(--m-3-oscuro); }
 .mapa__degrade-oscuro-4 { stop-color: var(--m-4-oscuro); }
 
-/* Sin beneficiarios: fondo claro con rayas (el color solo no basta). */
+/* Sin asesorías: fondo claro con rayas (el color solo no basta). */
 .mapa__patron-fondo { fill: var(--m-cero); }
 .mapa__patron-raya { stroke: var(--m-raya); stroke-width: 1.6; }
 

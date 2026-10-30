@@ -144,13 +144,13 @@ interface PropsLeyenda {
   clases: readonly ClaseColor[]
 }
 
-/** Leyenda de la escala: un tramo por color, más "Sin beneficiarios" (con rayas, no solo color). */
+/** Leyenda de la escala: un tramo por color, más "Sin asesorías" (con rayas, no solo color). */
 export function LeyendaMapa({ clases }: PropsLeyenda) {
   return (
     <ul className="mapa__leyenda" aria-label="Leyenda: beneficiarios por municipio">
       <li>
         <span className="mapa__muestra mapa__muestra--cero" aria-hidden="true" />
-        Sin beneficiarios
+        Sin asesorías
       </li>
       {clases.map((c) => (
         <li key={c.indice}>

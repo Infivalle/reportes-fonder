@@ -40,12 +40,28 @@ export function nuevaTarjeta(def: GraficaDef = nuevaDef(CAMPO_INICIAL), filtros:
   return { id: nuevoId(), def, filtros }
 }
 
-/** Gráficas de partida: para que nadie tenga que armar todo desde cero. Son campos del catálogo, editables y quitables. */
-const CAMPOS_EJEMPLO = ['satisfaction', 'results_as_expected', 'mejoras'] as const
+/**
+ * Gráficas de partida: para que nadie tenga que armar todo desde cero. Son campos del catálogo,
+ * editables y quitables. Cada una debe ser válida tal cual (lo comprueba tests/tablero-ejemplos.test.ts).
+ */
+export const DEFS_EJEMPLO: readonly GraficaDef[] = [
+  // 1. Beneficiarios por municipio
+  { campo: 'municipio_codigo', grafica: 'dona', medida: 'conteo', desglose: null },
+  // 2. Destino del crédito, desglosado por municipio
+  { campo: 'mejoras', grafica: 'barras_horizontales', medida: 'conteo', desglose: 'municipio_codigo' },
+  // 3. Satisfacción general, en porcentaje
+  { campo: 'satisfaction', grafica: 'barras', medida: 'porcentaje', desglose: null },
+  // 4. Canales de venta
+  { campo: 'canales', grafica: 'barras_horizontales', medida: 'conteo', desglose: null },
+  // 5. ¿Lleva registros contables?
+  { campo: 'financial_records', grafica: 'dona', medida: 'conteo', desglose: null },
+  // 6. Empleados actuales, por rango
+  { campo: 'current_employees', grafica: 'barras', medida: 'conteo', desglose: null },
+]
 
 /** Tablero de la primera visita (y de "Cargar gráficas de ejemplo"). */
 export function tableroInicial(): Tablero {
-  return { version: VERSION_TABLERO, tarjetas: CAMPOS_EJEMPLO.map((c) => nuevaTarjeta(nuevaDef(c))) }
+  return { version: VERSION_TABLERO, tarjetas: DEFS_EJEMPLO.map((def) => nuevaTarjeta({ ...def })) }
 }
 
 export const tableroVacio = (): Tablero => ({ version: VERSION_TABLERO, tarjetas: [] })

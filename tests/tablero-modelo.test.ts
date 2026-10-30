@@ -20,10 +20,10 @@ const con = (...campos: string[]) => campos.reduce((t, c) => agregarTarjeta(t, n
 const campos = (t: ReturnType<typeof tableroVacio>) => t.tarjetas.map((x) => x.def.campo)
 
 describe('operaciones del tablero', () => {
-  it('la primera visita trae tres gráficas de ejemplo con ids distintos', () => {
+  it('la primera visita trae seis gráficas de ejemplo con ids distintos', () => {
     const t = tableroInicial()
-    expect(campos(t)).toEqual(['satisfaction', 'results_as_expected', 'mejoras'])
-    expect(new Set(t.tarjetas.map((x) => x.id)).size).toBe(3)
+    expect(campos(t)).toEqual(['municipio_codigo', 'mejoras', 'satisfaction', 'canales', 'financial_records', 'current_employees'])
+    expect(new Set(t.tarjetas.map((x) => x.id)).size).toBe(6)
   })
 
   it('agrega al final y respeta el máximo', () => {
