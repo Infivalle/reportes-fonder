@@ -4,6 +4,7 @@ import { calcularMapa, clasesDeColor, detalleMunicipio } from '../mapa/datos'
 import { ID_TABLA_MUNICIPIOS, ListaMunicipios } from '../mapa/ListaMunicipios'
 import { LeyendaMapa, MapaValle } from '../mapa/MapaValle'
 import { PanelMunicipio } from '../mapa/PanelMunicipio'
+import { BENEFICIARIOS_POR_MUNICIPIO } from '../mapa/totalesMunicipio'
 import type { ModoVista } from '../mapa/proyeccion'
 import type { PublicoJson } from '../publico/tipos'
 import { construirHash, type FiltrosGlobales } from './ruta'
@@ -21,7 +22,7 @@ const TOTAL_MUNICIPIOS = 42
 export function PaginaMapa({ datos, filtros }: Props) {
   // El municipio del filtro global solo sirve para abrir el panel al entrar; el mapa muestra los 42.
   const [seleccionado, setSeleccionado] = useState<string | null>(filtros.municipio)
-  const [vista, setVista] = useState<ModoVista>('3d')
+  const [vista, setVista] = useState<ModoVista>('plana')
   const [activo, setActivo] = useState<string | null>(null)
   const panel = useRef<HTMLElement>(null)
   const figura = useRef<HTMLElement>(null)
@@ -94,11 +95,11 @@ export function PaginaMapa({ datos, filtros }: Props) {
 
       <div className="mapa__rejilla">
         <div className="mapa__principal">
-          <div className="mapa__herramientas">
-            <button type="button" className="boton" aria-pressed={vista === 'plana'} onClick={() => setVista(vista === 'plana' ? '3d' : 'plana')}>
-              Vista plana
+          <div className="mapa__herramientas" role="group" aria-label="Opciones del mapa">
+            <button type="button" className="boton" aria-pressed={vista === '3d'} onClick={() => setVista(vista === '3d' ? 'plana' : '3d')}>
+              Vista 3D
             </button>
-            <button type="button" className="boton boton--texto" onClick={irALista}>
+            <button type="button" className="boton" onClick={irALista}>
               Ir a la lista de municipios
             </button>
           </div>
@@ -108,7 +109,7 @@ export function PaginaMapa({ datos, filtros }: Props) {
             <figcaption className="mapa__lectura">
               {lectura === undefined
                 ? 'Pase el cursor o toque un municipio para ver su detalle.'
-                : `${lectura.nombre}: ${formatoEntero(lectura.beneficiarios)} ${lectura.beneficiarios === 1 ? 'beneficiario' : 'beneficiarios'} · ${formatoEntero(lectura.asesorias)} ${lectura.asesorias === 1 ? 'asesoría' : 'asesorías'}`}
+                : `${lectura.nombre}: ${formatoEntero(lectura.beneficiarios)} ${lectura.beneficiarios === 1 ? 'beneficiario' : 'beneficiarios'}`}
             </figcaption>
           </figure>
 
@@ -155,7 +156,11 @@ export function PaginaMapa({ datos, filtros }: Props) {
             ? 'El municipio es el de la empresa del beneficiario; cuando falta, se usa el de su residencia.'
             : 'El municipio es la ciudad de residencia del beneficiario: la carga actual no incluye el municipio de la empresa.',
         )}
-        {aviso('El mapa cuenta beneficiarios, no cobertura: no hay un total de beneficiarios por municipio para calcular qué porcentaje fue atendido.')}
+        {aviso(
+          Object.keys(BENEFICIARIOS_POR_MUNICIPIO).length === 0
+            ? 'El mapa cuenta beneficiarios, no cobertura: falta cargar el total de beneficiarios de cada municipio para calcular qué porcentaje fue atendido.'
+            : 'El color del mapa cuenta beneficiarios. La cobertura de cada municipio (beneficiarios con asesoría sobre el total de su convocatoria) se ve en el detalle y no se calcula si hay un mes filtrado.',
+        )}
         {filtros.municipio !== null &&
           aviso('El filtro de municipio no se aplica al mapa: aquí se ven los 42 municipios y el municipio se elige tocándolo. Los filtros de convocatoria y mes sí aplican.')}
       </div>

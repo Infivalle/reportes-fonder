@@ -6,6 +6,12 @@
   --m-2: #6f9bd8;
   --m-3: #3f70bd;
   --m-4: #1c4a94;
+  /* Degradé de cada tramo: un extremo 22 % más claro (hacia blanco) y el otro 16 % hacia el azul oscuro de la marca (sin pasar por gris). */
+  --m-0-claro: #dae7f7; --m-0-oscuro: #b0c5e2;
+  --m-1-claro: #b7cfef; --m-1-oscuro: #8bacd9;
+  --m-2-claro: #8fb1e1; --m-2-oscuro: #608bc9;
+  --m-3-claro: #698fcc; --m-3-oscuro: #3767b3;
+  --m-4-claro: #4e72ac; --m-4-oscuro: #1a4790;
   --m-pared: #0e2d62;
   --m-cero: #f3f7fc;
   --m-raya: #9db3d3;
@@ -34,25 +40,33 @@
 }
 
 .mapa__herramientas {
-  display: flex;
+  display: inline-flex;
   flex-wrap: wrap;
-  gap: 8px 12px;
+  gap: 4px;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
+  padding: 4px;
+  background: var(--f-panel);
+  border: 1px solid var(--f-borde);
+  border-radius: 14px;
 }
 
-.mapa__herramientas .boton--texto {
-  margin-left: 0;
+/* Dentro del contenedor los botones son segmentos: el activo es una pastilla clara con sombra. */
+.mapa__herramientas .boton {
+  background: transparent;
+  border-color: transparent;
+  border-radius: 10px;
 }
 
-.boton[aria-pressed='true'],
-.boton[aria-pressed='true']:hover:not(:disabled) {
-  color: #f8fbff;
-  background: var(--f-acento);
+.mapa__herramientas .boton:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--f-acento) 8%, transparent);
 }
 
-.boton[aria-pressed='true']:hover:not(:disabled) {
-  background: #0b2d63;
+.mapa__herramientas .boton[aria-pressed='true'],
+.mapa__herramientas .boton[aria-pressed='true']:hover:not(:disabled) {
+  color: var(--f-acento);
+  background: var(--f-tarjeta);
+  box-shadow: 0 1px 4px rgba(20, 33, 61, 0.22);
 }
 
 .mapa__figura {
@@ -109,11 +123,16 @@
   stroke-width: 2.5;
 }
 
-.mapa__clase-0 { fill: var(--m-0); }
-.mapa__clase-1 { fill: var(--m-1); }
-.mapa__clase-2 { fill: var(--m-2); }
-.mapa__clase-3 { fill: var(--m-3); }
-.mapa__clase-4 { fill: var(--m-4); }
+.mapa__degrade-claro-0 { stop-color: var(--m-0-claro); }
+.mapa__degrade-claro-1 { stop-color: var(--m-1-claro); }
+.mapa__degrade-claro-2 { stop-color: var(--m-2-claro); }
+.mapa__degrade-claro-3 { stop-color: var(--m-3-claro); }
+.mapa__degrade-claro-4 { stop-color: var(--m-4-claro); }
+.mapa__degrade-oscuro-0 { stop-color: var(--m-0-oscuro); }
+.mapa__degrade-oscuro-1 { stop-color: var(--m-1-oscuro); }
+.mapa__degrade-oscuro-2 { stop-color: var(--m-2-oscuro); }
+.mapa__degrade-oscuro-3 { stop-color: var(--m-3-oscuro); }
+.mapa__degrade-oscuro-4 { stop-color: var(--m-4-oscuro); }
 
 /* Sin beneficiarios: fondo claro con rayas (el color solo no basta). */
 .mapa__patron-fondo { fill: var(--m-cero); }
@@ -157,11 +176,11 @@
   border-radius: 3px;
 }
 
-.mapa__muestra.mapa__clase-0 { background: var(--m-0); }
-.mapa__muestra.mapa__clase-1 { background: var(--m-1); }
-.mapa__muestra.mapa__clase-2 { background: var(--m-2); }
-.mapa__muestra.mapa__clase-3 { background: var(--m-3); }
-.mapa__muestra.mapa__clase-4 { background: var(--m-4); }
+.mapa__muestra-0 { background: linear-gradient(160deg, var(--m-0-claro), var(--m-0-oscuro)); }
+.mapa__muestra-1 { background: linear-gradient(160deg, var(--m-1-claro), var(--m-1-oscuro)); }
+.mapa__muestra-2 { background: linear-gradient(160deg, var(--m-2-claro), var(--m-2-oscuro)); }
+.mapa__muestra-3 { background: linear-gradient(160deg, var(--m-3-claro), var(--m-3-oscuro)); }
+.mapa__muestra-4 { background: linear-gradient(160deg, var(--m-4-claro), var(--m-4-oscuro)); }
 
 .mapa__muestra--cero {
   background: repeating-linear-gradient(45deg, var(--m-cero) 0 3px, var(--m-raya) 3px 4.5px);
@@ -212,37 +231,60 @@
   color: var(--f-suave);
 }
 
-.mapa-panel__cifras {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin: 0;
-}
-
-.mapa-panel__cifras div {
-  padding: 8px 12px;
-  background: var(--f-tarjeta);
-  border: 1px solid var(--f-borde);
-  border-radius: 12px;
-}
-
-.mapa-panel__cifras dt {
-  font-size: 0.85rem;
-  color: var(--f-suave);
-}
-
-.mapa-panel__cifras dd {
-  margin: 0;
-  font-size: 1.75rem;
-  font-weight: 700;
-  line-height: 1.2;
-  color: var(--f-acento);
-  font-variant-numeric: tabular-nums;
-}
-
 .mapa-panel .tarjeta {
   --valor-max: 1.75rem;
   padding: 12px 14px;
+}
+
+.mapa-fila {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.mapa-fila .tarjeta__valor {
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+.mapa-fila__barra {
+  flex: 1 1 auto;
+  min-width: 48px;
+  margin-top: 0;
+}
+
+.mapa-fila--anillo {
+  justify-content: space-between;
+}
+
+.mapa-fila--anillo .tarjeta__descripcion {
+  margin-top: 2px;
+}
+
+.anillo {
+  flex: 0 0 auto;
+  width: 76px;
+  height: 76px;
+}
+
+.anillo__fondo {
+  fill: none;
+  stroke: color-mix(in srgb, var(--t-azul) 22%, var(--f-tarjeta));
+  stroke-width: 9;
+}
+
+.anillo__arco {
+  fill: none;
+  stroke: var(--t-azul);
+  stroke-width: 9;
+  stroke-linecap: round;
+}
+
+.anillo__texto {
+  font-size: 15px;
+  font-weight: 700;
+  fill: var(--f-acento);
 }
 
 .mapa-panel__tarjetas {

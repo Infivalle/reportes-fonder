@@ -18,6 +18,11 @@ export const VISTA_3D = {
   sombra: { dx: 18, dy: 30, difuminado: 9 },
 } as const
 
+/** Sombra del mapa plano: más corta y suave que la de la vista 3D, que además tiene pared. */
+export const SOMBRA_PLANA = { dx: 5, dy: 9, difuminado: 6 } as const
+
+export const sombraDe = (modo: ModoVista) => (modo === '3d' ? VISTA_3D.sombra : SOMBRA_PLANA)
+
 export interface Caja {
   x: number
   y: number
@@ -63,7 +68,7 @@ export function puntosDeTrazado(d: string): Punto[] {
  * Caja (viewBox) que contiene el mapa en la vista pedida, con la pared, la sombra y un margen.
  * `puntos` son los vértices del mapa plano: la caja se ajusta a la forma real, no a su rectángulo.
  */
-export function cajaDeVista(puntos: readonly Punto[], modo: ModoVista, margen = 12): Caja {
+export function cajaDeVista(puntos: readonly Punto[], modo: ModoVista, margen = 14): Caja {
   const [a, b, c, d] = modo === '3d' ? matriz3D() : ([1, 0, 0, 1] as const)
   let x0 = Infinity
   let y0 = Infinity
@@ -77,10 +82,10 @@ export function cajaDeVista(puntos: readonly Punto[], modo: ModoVista, margen = 
     y0 = Math.min(y0, py)
     y1 = Math.max(y1, py)
   }
-  const { sombra, espesor } = VISTA_3D
+  const sombra = sombraDe(modo)
   const holgura = sombra.difuminado * 3
-  const derecha = modo === '3d' ? Math.max(0, sombra.dx) + holgura : 0
-  const abajo = modo === '3d' ? espesor + Math.max(0, sombra.dy) + holgura : 0
+  const derecha = Math.max(0, sombra.dx) + holgura
+  const abajo = (modo === '3d' ? VISTA_3D.espesor : 0) + Math.max(0, sombra.dy) + holgura
   const arriba = modo === '3d' ? 8 : 0 // el municipio elegido sube unas unidades
   const ax = Math.floor(x0 - margen)
   const ay = Math.floor(y0 - margen - arriba)

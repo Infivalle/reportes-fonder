@@ -17,6 +17,7 @@ import { aplicarFiltros, calcularIndicadores, type IndicadorProporcion } from '.
 import { claveProyecto, etiquetaProyecto } from '../indicadores/proyectos'
 import { MUNICIPIOS_VALLE, nombreMunicipio } from '../limpieza/municipios'
 import type { FilaPublica, PublicoJson } from '../publico/tipos'
+import { BENEFICIARIOS_POR_MUNICIPIO, type TotalesDelMunicipio, type TotalesMunicipio } from './totalesMunicipio'
 
 /** Filtros que usa el mapa: convocatoria y mes (el municipio se elige dentro del mapa). */
 export interface FiltrosMapa {
@@ -108,6 +109,26 @@ export interface ConvocatoriaMunicipio {
   beneficiarios: number
 }
 
+/**
+ * - `ok`: hay total y el filtro lo permite.
+ * - `sin_total`: no hay total utilizable (falta, es 0, o la convocatoria elegida no es la primera ni la segunda).
+ * - `con_mes`: el total es de todos los meses; con un mes filtrado el porcentaje saldría subestimado,
+ *   así que no se calcula. (La convocatoria sí se puede filtrar: hay total por convocatoria.)
+ */
+export type EstadoCobertura = 'ok' | 'sin_total' | 'con_mes'
+
+export interface CoberturaMunicipio {
+  estado: EstadoCobertura
+  /** Total de beneficiarios del municipio (solo con estado `ok`). */
+  total: number | null
+  /** 0 a 100 (solo con estado `ok`). */
+  porcentaje: number | null
+  /** Hay más beneficiarios atendidos que el total cargado: el total está desactualizado. */
+  inconsistente: boolean
+}
+
+export type { TotalesMunicipio }
+
 export interface DetalleMunicipio {
   codigo: string
   nombre: string
@@ -116,6 +137,7 @@ export interface DetalleMunicipio {
   satisfaccion: PorcentajeMunicipio
   resultados: PorcentajeMunicipio
   nuevoCredito: PorcentajeMunicipio
+  cobertura: CoberturaMunicipio
   /** Beneficiarios por convocatoria, de mayor a menor (empate: orden alfabético). */
   porConvocatoria: ConvocatoriaMunicipio[]
 }
@@ -125,7 +147,28 @@ function porcentajeDe(i: IndicadorProporcion): PorcentajeMunicipio {
   return { valor: oculto ? null : i.valor, n: i.n, oculto }
 }
 
-export function detalleMunicipio(datos: PublicoJson, filtros: FiltrosMapa, codigo: string): DetalleMunicipio {
+/** "fondervalleprimeraconvocatoria" → 'primera'; "…segunda…" → 'segunda'; otra cosa → null. */
+export function convocatoriaDe(clave: string): 'primera' | 'segunda' | null {
+  const c = clave.toLowerCase()
+  if (c.includes('primera')) return 'primera'
+  if (c.includes('segunda')) return 'segunda'
+  return null
+}
+
+function coberturaDe(atendidos: number, totales: TotalesDelMunicipio | undefined, filtros: FiltrosMapa): CoberturaMunicipio {
+  if (filtros.mes !== null) return { estado: 'con_mes', total: null, porcentaje: null, inconsistente: false }
+  const conv = filtros.proyecto === null ? 'total' : convocatoriaDe(filtros.proyecto)
+  const total = totales === undefined || conv === null ? undefined : totales[conv]
+  if (total === undefined || !Number.isFinite(total) || total <= 0) return { estado: 'sin_total', total: null, porcentaje: null, inconsistente: false }
+  return { estado: 'ok', total, porcentaje: (atendidos / total) * 100, inconsistente: atendidos > total }
+}
+
+export function detalleMunicipio(
+  datos: PublicoJson,
+  filtros: FiltrosMapa,
+  codigo: string,
+  totales: TotalesMunicipio = BENEFICIARIOS_POR_MUNICIPIO,
+): DetalleMunicipio {
   const r = calcularIndicadores(datos, { proyecto: filtros.proyecto, mes: filtros.mes, municipio: codigo })
 
   const personas = new Map<string, Set<string>>() // convocatoria → beneficiarios
@@ -150,6 +193,7 @@ export function detalleMunicipio(datos: PublicoJson, filtros: FiltrosMapa, codig
     satisfaccion: porcentajeDe(r.satisfaccion),
     resultados: porcentajeDe(r.resultados),
     nuevoCredito: porcentajeDe(r.nuevoCredito),
+    cobertura: coberturaDe(r.beneficiarios, totales[codigo], filtros),
     porConvocatoria,
   }
 }

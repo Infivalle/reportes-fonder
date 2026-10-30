@@ -2,12 +2,13 @@ import { useId, useMemo, type KeyboardEvent } from 'react'
 import { formatoEntero } from '../indicadores/formato'
 import { claseDe, type ClaseColor, type ResumenMunicipio } from './datos'
 import { GEOMETRIA_VALLE } from './geometriaValle'
-import { VISTA_3D, cajaDeVista, matriz3D, puntosDeTrazado, textoMatriz, type ModoVista } from './proyeccion'
+import { VISTA_3D, cajaDeVista, matriz3D, puntosDeTrazado, sombraDe, textoMatriz, type ModoVista } from './proyeccion'
 import './mapa.css'
 
 const MATRIZ = textoMatriz(matriz3D())
 const PUNTOS = GEOMETRIA_VALLE.flatMap((g) => puntosDeTrazado(g.d))
 const CAJAS = { '3d': cajaDeVista(PUNTOS, '3d'), plana: cajaDeVista(PUNTOS, 'plana') } as const
+const CLASES_DEGRADE = [0, 1, 2, 3, 4] as const
 const PASOS_PARED = Array.from({ length: VISTA_3D.espesor }, (_, i) => i + 1)
 /** Cuánto sube (en unidades del viewBox) el municipio elegido en la vista 3D. */
 const ELEVACION = 7
@@ -35,6 +36,8 @@ export function MapaValle({ municipios, clases, seleccionado, vista, onElegir, o
   const idSilueta = `${id}-silueta`
   const idSombra = `${id}-sombra`
   const idPatron = `${id}-patron`
+  const idDegrade = (i: number) => `${id}-degrade-${i}`
+  const sombra = sombraDe(vista)
   const en3d = vista === '3d'
   const caja = CAJAS[vista]
   const porCodigo = useMemo(() => new Map(municipios.map((m) => [m.codigo, m])), [municipios])
@@ -55,7 +58,7 @@ export function MapaValle({ municipios, clases, seleccionado, vista, onElegir, o
         key={codigo}
         d={d}
         className={`mapa__municipio mapa__clase-${clase ?? 'cero'}${elegido ? ' mapa__municipio--elegido' : ''}`}
-        fill={clase === null ? `url(#${idPatron})` : undefined}
+        fill={clase === null ? `url(#${idPatron})` : `url(#${idDegrade(clase)})`}
         data-mapa-codigo={codigo}
         role="button"
         tabIndex={0}
@@ -89,19 +92,28 @@ export function MapaValle({ municipios, clases, seleccionado, vista, onElegir, o
           ))}
         </g>
         <filter id={idSombra} x="-10%" y="-10%" width="125%" height="125%">
-          <feGaussianBlur stdDeviation={VISTA_3D.sombra.difuminado} />
+          <feGaussianBlur stdDeviation={sombra.difuminado} />
         </filter>
+        {/* Degradé de cada tramo: más claro arriba a la izquierda, más oscuro abajo (el promedio es el color del tramo). */}
+        {CLASES_DEGRADE.map((i) => (
+          <linearGradient key={i} id={idDegrade(i)} x1="0" y1="0" x2="0.45" y2="1">
+            <stop offset="0" className={`mapa__degrade-claro-${i}`} />
+            <stop offset="1" className={`mapa__degrade-oscuro-${i}`} />
+          </linearGradient>
+        ))}
         <pattern id={idPatron} width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
           <rect width="9" height="9" className="mapa__patron-fondo" />
           <line x1="0" y1="0" x2="0" y2="9" className="mapa__patron-raya" />
         </pattern>
       </defs>
 
+      {/* Sombra proyectada: en las dos vistas. */}
+      <g aria-hidden="true" transform={`translate(${sombra.dx} ${sombra.dy})`} filter={`url(#${idSombra})`}>
+        <use href={`#${idSilueta}`} transform={transformar} className="mapa__sombra" />
+      </g>
+
       {en3d && (
         <g aria-hidden="true">
-          <g transform={`translate(${VISTA_3D.sombra.dx} ${VISTA_3D.sombra.dy})`} filter={`url(#${idSombra})`}>
-            <use href={`#${idSilueta}`} transform={MATRIZ} className="mapa__sombra" />
-          </g>
           {PASOS_PARED.map((paso) => (
             <use key={paso} href={`#${idSilueta}`} transform={`translate(0 ${paso}) ${MATRIZ}`} className="mapa__pared" />
           ))}
@@ -142,7 +154,7 @@ export function LeyendaMapa({ clases }: PropsLeyenda) {
       </li>
       {clases.map((c) => (
         <li key={c.indice}>
-          <span className={`mapa__muestra mapa__clase-${c.indice}`} aria-hidden="true" />
+          <span className={`mapa__muestra mapa__muestra-${c.indice}`} aria-hidden="true" />
           {c.desde === c.hasta ? formatoEntero(c.desde) : `${formatoEntero(c.desde)} a ${formatoEntero(c.hasta)}`}
         </li>
       ))}

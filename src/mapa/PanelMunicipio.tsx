@@ -2,6 +2,7 @@ import { forwardRef } from 'react'
 import { UMBRAL_SUPRESION } from '../graficas/datos'
 import { formatoEntero, formatoPorcentaje } from '../indicadores/formato'
 import { Tarjeta, TablaDistribucion } from '../interfaz/Tarjeta'
+import { Anillo } from './Anillo'
 import type { DetalleMunicipio, PorcentajeMunicipio } from './datos'
 import './mapa.css'
 
@@ -15,6 +16,76 @@ interface Props {
 function valorDe(p: PorcentajeMunicipio): string {
   if (p.oculto) return `Menos de ${UMBRAL_SUPRESION} respuestas`
   return formatoPorcentaje(p.valor)
+}
+
+type Tono = 'azul' | 'turquesa' | 'verde' | 'ambar'
+
+/** Tarjeta de un porcentaje: el valor a la izquierda y una barra de progreso a su lado. */
+function TarjetaPorcentaje({ tono, titulo, descripcion, p }: { tono: Tono; titulo: string; descripcion: string; p: PorcentajeMunicipio }) {
+  const valor = valorDe(p)
+  return (
+    <article className={`tarjeta tarjeta--${tono}`}>
+      <h4 className="tarjeta__titulo">{titulo}</h4>
+      <div className="mapa-fila">
+        <p className="tarjeta__valor">{valor}</p>
+        {p.valor !== null && (
+          <div
+            className="progreso mapa-fila__barra"
+            role="meter"
+            aria-label={titulo}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(p.valor)}
+            aria-valuetext={valor}
+          >
+            <span className="progreso__relleno" style={{ width: `${Math.min(100, Math.max(0, p.valor))}%` }} />
+          </div>
+        )}
+      </div>
+      <p className="tarjeta__descripcion">{descripcion}</p>
+      <p className="tarjeta__n">
+        Basado en {formatoEntero(p.n)} {p.n === 1 ? 'respuesta' : 'respuestas'}
+      </p>
+    </article>
+  )
+}
+
+function TarjetaCobertura({ d }: { d: DetalleMunicipio }) {
+  const c = d.cobertura
+  const atendidos = `${formatoEntero(d.beneficiarios)} ${d.beneficiarios === 1 ? 'beneficiario' : 'beneficiarios'}`
+  if (c.estado === 'ok' && c.total !== null && c.porcentaje !== null) {
+    const pct = formatoPorcentaje(c.porcentaje)
+    return (
+      <article className="tarjeta tarjeta--azul">
+        <h4 className="tarjeta__titulo">Cobertura</h4>
+        <div className="mapa-fila mapa-fila--anillo">
+          <div>
+            <p className="tarjeta__valor">
+              {formatoEntero(d.beneficiarios)} de {formatoEntero(c.total)}
+            </p>
+            <p className="tarjeta__descripcion">Beneficiarios del municipio con asesoría.</p>
+          </div>
+          <Anillo porcentaje={c.porcentaje} etiqueta={`Cobertura: ${pct}`} texto={pct} />
+        </div>
+        {c.inconsistente && (
+          <p className="tarjeta__aviso" role="note">
+            Hay más beneficiarios atendidos que el total cargado: el total está desactualizado.
+          </p>
+        )}
+      </article>
+    )
+  }
+  return (
+    <article className="tarjeta tarjeta--azul">
+      <h4 className="tarjeta__titulo">Beneficiarios con asesoría</h4>
+      <p className="tarjeta__valor">{formatoEntero(d.beneficiarios)}</p>
+      <p className="tarjeta__descripcion">
+        {c.estado === 'con_mes'
+          ? `${atendidos} con los filtros actuales. La cobertura se calcula con todos los meses: quite el filtro de mes para verla.`
+          : `${atendidos}. No hay un total de beneficiarios del municipio para esta selección, así que no se puede calcular la cobertura.`}
+      </p>
+    </article>
+  )
 }
 
 /**
@@ -39,26 +110,19 @@ export const PanelMunicipio = forwardRef<HTMLElement, Props>(function PanelMunic
       </header>
 
       {vacio ? (
-        <p className="indicadores__vacio" role="status">
-          Este municipio no tiene beneficiarios con asesoría con los filtros actuales.
-        </p>
+        <>
+          <p className="indicadores__vacio" role="status">
+            Este municipio no tiene beneficiarios con asesoría con los filtros actuales.
+          </p>
+          {d.cobertura.estado === 'ok' && <TarjetaCobertura d={d} />}
+        </>
       ) : (
         <>
-          <dl className="mapa-panel__cifras">
-            <div>
-              <dt>Beneficiarios</dt>
-              <dd>{formatoEntero(d.beneficiarios)}</dd>
-            </div>
-            <div>
-              <dt>Asesorías</dt>
-              <dd>{formatoEntero(d.asesorias)}</dd>
-            </div>
-          </dl>
-
           <div className="mapa-panel__tarjetas">
-            <Tarjeta tono="verde" titulo="Satisfacción" valor={valorDe(d.satisfaccion)} descripcion="Muy satisfechos o satisfechos." n={d.satisfaccion.n} />
-            <Tarjeta tono="azul" titulo="Resultados esperados" valor={valorDe(d.resultados)} descripcion="Obtuvieron los resultados que esperaban." n={d.resultados.n} />
-            <Tarjeta tono="ambar" titulo="Necesidad de nuevo crédito" valor={valorDe(d.nuevoCredito)} descripcion="Necesitan otro crédito." n={d.nuevoCredito.n} />
+            <TarjetaCobertura d={d} />
+            <TarjetaPorcentaje tono="verde" titulo="Satisfacción" descripcion="Muy satisfechos o satisfechos." p={d.satisfaccion} />
+            <TarjetaPorcentaje tono="azul" titulo="Resultados esperados" descripcion="Obtuvieron los resultados que esperaban." p={d.resultados} />
+            <TarjetaPorcentaje tono="ambar" titulo="Necesidad de nuevo crédito" descripcion="Necesitan otro crédito." p={d.nuevoCredito} />
             <Tarjeta tono="turquesa" titulo="Por convocatoria" descripcion="Beneficiarios de este municipio en cada convocatoria." n={null}>
               <TablaDistribucion
                 titulo="Beneficiarios por convocatoria"

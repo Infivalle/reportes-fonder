@@ -3,9 +3,10 @@ import { calcularIndicadores } from '../indicadores/calcular'
 import { claveProyecto, etiquetaProyecto } from '../indicadores/proyectos'
 import { MUNICIPIOS_VALLE } from '../limpieza/municipios'
 import type { FilaPublica, PublicoJson } from '../publico/tipos'
-import { calcularMapa, claseDe, clasesDeColor, detalleMunicipio, ordenarMunicipios } from './datos'
+import { calcularMapa, claseDe, clasesDeColor, convocatoriaDe, detalleMunicipio, ordenarMunicipios } from './datos'
 import { GEOMETRIA_VALLE, VIEWBOX_VALLE } from './geometriaValle'
-import { cajaDeVista, matriz3D, puntosDeTrazado } from './proyeccion'
+import { BENEFICIARIOS_POR_MUNICIPIO } from './totalesMunicipio'
+import { SOMBRA_PLANA, cajaDeVista, matriz3D, puntosDeTrazado } from './proyeccion'
 
 const P1 = 'FonderVallePrimeraConvocatoria'
 const P2 = 'FonderValleSegundaConvocatoria'
@@ -171,6 +172,48 @@ describe('detalleMunicipio', () => {
     expect(d.satisfaccion).toEqual({ valor: null, n: 0, oculto: false })
   })
 
+  describe('cobertura', () => {
+    const totales = {
+      '76001': { primera: 5, segunda: 4, total: 8 }, // 3 atendidos en Cali: 2 en la primera y 1 en la segunda
+      '76834': { primera: 1, segunda: 0, total: 1 },
+      '76020': { primera: 0, segunda: 0, total: 0 },
+    }
+    const P1_ = { proyecto: claveProyecto(P1), mes: null }
+    const P2_ = { proyecto: claveProyecto(P2), mes: null }
+
+    it('sin filtros: beneficiarios sobre el total de las dos convocatorias', () => {
+      const d = detalleMunicipio(datos, SIN, '76001', totales)
+      expect(d.cobertura).toEqual({ estado: 'ok', total: 8, porcentaje: (3 / 8) * 100, inconsistente: false })
+    })
+    it('con una convocatoria: atendidos y total de esa convocatoria', () => {
+      expect(detalleMunicipio(datos, P1_, '76001', totales).cobertura).toEqual({ estado: 'ok', total: 5, porcentaje: (2 / 5) * 100, inconsistente: false })
+      expect(detalleMunicipio(datos, P2_, '76001', totales).cobertura).toEqual({ estado: 'ok', total: 4, porcentaje: (1 / 4) * 100, inconsistente: false })
+    })
+    it('un total en 0 (sin beneficiarios en el listado) no sirve: sin_total', () => {
+      expect(detalleMunicipio(datos, SIN, '76020', totales).cobertura.estado).toBe('sin_total')
+      expect(detalleMunicipio(datos, P2_, '76834', totales).cobertura.estado).toBe('sin_total')
+    })
+    it('sin entrada del municipio o con totales vacíos: sin_total', () => {
+      expect(detalleMunicipio(datos, SIN, '76001', {}).cobertura.estado).toBe('sin_total')
+      expect(detalleMunicipio(datos, SIN, '76520', totales).cobertura.estado).toBe('sin_total')
+    })
+    it('una convocatoria que no es primera ni segunda: sin_total', () => {
+      expect(detalleMunicipio(datos, { proyecto: 'otraconvocatoria', mes: null }, '76001', totales).cobertura.estado).toBe('sin_total')
+    })
+    it('con un mes filtrado no se calcula (el total es de todos los meses)', () => {
+      expect(detalleMunicipio(datos, { proyecto: null, mes: '2026-10' }, '76001', totales).cobertura).toMatchObject({ estado: 'con_mes', porcentaje: null })
+      expect(detalleMunicipio(datos, { proyecto: claveProyecto(P1), mes: '2026-10' }, '76001', totales).cobertura.estado).toBe('con_mes')
+    })
+    it('más atendidos que el total: se marca inconsistente (el total está desactualizado)', () => {
+      expect(detalleMunicipio(datos, SIN, '76001', { '76001': { primera: 1, segunda: 1, total: 2 } }).cobertura).toMatchObject({ estado: 'ok', inconsistente: true })
+    })
+    it('convocatoriaDe reconoce la clave de proyecto', () => {
+      expect(convocatoriaDe('fondervalleprimeraconvocatoria')).toBe('primera')
+      expect(convocatoriaDe(claveProyecto(P2))).toBe('segunda')
+      expect(convocatoriaDe('tercera')).toBeNull()
+    })
+  })
+
   it('aplica convocatoria y mes', () => {
     const d = detalleMunicipio(datos, { proyecto: claveProyecto(P2), mes: null }, '76001')
     expect(d.beneficiarios).toBe(1)
@@ -241,6 +284,24 @@ describe('ordenarMunicipios', () => {
   })
 })
 
+describe('totales por municipio (datos cargados del Excel)', () => {
+  const t = BENEFICIARIOS_POR_MUNICIPIO
+  it('traen los 42 municipios del Valle por código DIVIPOLA', () => {
+    expect(Object.keys(t).sort()).toEqual(MUNICIPIOS_VALLE.map((m) => m.codigo).sort())
+  })
+  it('son enteros no negativos y total está entre el mayor de las convocatorias y su suma', () => {
+    for (const [codigo, v] of Object.entries(t)) {
+      for (const n of [v.primera, v.segunda, v.total]) expect(Number.isInteger(n) && n >= 0, codigo).toBe(true)
+      expect(v.total, codigo).toBeGreaterThanOrEqual(Math.max(v.primera, v.segunda))
+      expect(v.total, codigo).toBeLessThanOrEqual(v.primera + v.segunda)
+    }
+  })
+  it('suman 1.025 en la primera, 718 en la segunda y 1.741 personas distintas', () => {
+    const suma = (k: 'primera' | 'segunda' | 'total') => Object.values(t).reduce((s, v) => s + v[k], 0)
+    expect([suma('primera'), suma('segunda'), suma('total')]).toEqual([1025, 718, 1741])
+  })
+})
+
 describe('geometría y vista 3D', () => {
   it('trae los 42 municipios del Valle, por código DIVIPOLA', () => {
     expect(GEOMETRIA_VALLE.map((g) => g.codigo).sort()).toEqual(MUNICIPIOS_VALLE.map((m) => m.codigo).sort())
@@ -280,8 +341,17 @@ describe('geometría y vista 3D', () => {
     const puntos = GEOMETRIA_VALLE.flatMap((g) => puntosDeTrazado(g.d))
     const caja = cajaDeVista(puntos, 'plana')
     expect(caja.ancho).toBeGreaterThan(VIEWBOX_VALLE.ancho)
-    expect(caja.ancho).toBeLessThan(VIEWBOX_VALLE.ancho + 40)
+    expect(caja.ancho).toBeLessThan(VIEWBOX_VALLE.ancho + 100)
     expect(caja.alto).toBeGreaterThan(VIEWBOX_VALLE.alto)
-    expect(caja.alto).toBeLessThan(VIEWBOX_VALLE.alto + 40)
+    expect(caja.alto).toBeLessThan(VIEWBOX_VALLE.alto + 100)
+  })
+  it('la caja plana deja sitio a la sombra (a la derecha y abajo)', () => {
+    const puntos = GEOMETRIA_VALLE.flatMap((g) => puntosDeTrazado(g.d))
+    const caja = cajaDeVista(puntos, 'plana')
+    const { dx, dy, difuminado } = SOMBRA_PLANA
+    const maxX = Math.max(...puntos.map(([x]) => x))
+    const maxY = Math.max(...puntos.map(([, y]) => y))
+    expect(maxX + dx + difuminado * 2).toBeLessThan(caja.x + caja.ancho)
+    expect(maxY + dy + difuminado * 2).toBeLessThan(caja.y + caja.alto)
   })
 })

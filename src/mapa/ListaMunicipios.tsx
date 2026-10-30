@@ -19,7 +19,6 @@ export const ID_TABLA_MUNICIPIOS = 'lista-municipios-tabla'
 const COLUMNAS: { clave: OrdenLista; etiqueta: string }[] = [
   { clave: 'nombre', etiqueta: 'Municipio' },
   { clave: 'beneficiarios', etiqueta: 'Beneficiarios' },
-  { clave: 'asesorias', etiqueta: 'Asesorías' },
 ]
 
 /**
@@ -82,7 +81,6 @@ export function ListaMunicipios({ municipios, seleccionado, maximo, sinUbicar, t
                     {formatoEntero(m.beneficiarios)}
                   </span>
                 </td>
-                <td>{formatoEntero(m.asesorias)}</td>
               </tr>
             ))}
           </tbody>
@@ -91,13 +89,11 @@ export function ListaMunicipios({ municipios, seleccionado, maximo, sinUbicar, t
               <tr>
                 <th scope="row">Sin ubicar en un municipio del Valle</th>
                 <td>{formatoEntero(sinUbicar)}</td>
-                <td />
               </tr>
             )}
             <tr>
               <th scope="row">Total de beneficiarios</th>
               <td>{formatoEntero(total)}</td>
-              <td />
             </tr>
           </tfoot>
         </table>
