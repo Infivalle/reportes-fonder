@@ -1,49 +1,25 @@
 /**
- * Indicador de empleos: suma de los empleados actuales de los beneficiarios.
- *
- * El formulario NO guarda el número de empleados, solo un rango ("De 1 a 5", "De 5 a 10"…). Por eso
- * la suma exacta no existe: lo único cierto es un MÍNIMO. Cada beneficiario aporta el extremo
- * inferior de su rango y el resultado se presenta siempre como "al menos N".
+ * Generación de empleo declarada. El formulario NO registra cuántos empleos se generaron: solo si el
+ * beneficiario marcó "Generación de empleo" entre las mejoras logradas con el crédito. Por eso el
+ * indicador cuenta beneficiarios, nunca empleos. (La pregunta "Empleados actuales" es un rango del
+ * total de empleados, no de los generados.)
  */
 import type { Distribucion } from './calcular'
 
-export interface EmpleosMinimos {
-  /** Suma de los extremos inferiores: "al menos" tantos empleos. */
-  minimo: number
-  /** Beneficiarios con respuesta cuyo rango se pudo interpretar. */
-  personas: number
-  /** Beneficiarios con respuesta cuyo rango no se reconoció (no suman). */
-  sinInterpretar: number
+export interface GeneracionEmpleo {
+  /** Beneficiarios que marcaron "Generación de empleo". */
+  conteo: number
+  /** Sobre quienes respondieron la pregunta de mejoras (0 a 100); null si nadie respondió. */
+  porcentaje: number | null
+  /** Beneficiarios que respondieron la pregunta de mejoras. */
+  n: number
 }
 
-/**
- * Extremo inferior de un rango de empleados. Entiende "0", "De 1 a 5", "1 a 2", "Entre 3 y 5",
- * "Más de 5" (→ 6) y "10 o más" (→ 10). null si el texto no es un rango reconocible.
- */
-export function limiteInferior(rango: string): number | null {
-  const t = rango.trim().toLowerCase()
-  const mas = /^m[aá]s de\s+(\d+)$/.exec(t)
-  if (mas) return Number(mas[1]) + 1
-  const omas = /^(\d+)\s+o\s+m[aá]s$/.exec(t)
-  if (omas) return Number(omas[1])
-  const entre = /^(?:de|entre)?\s*(\d+)\s*(?:a|y|-)\s*(\d+)$/.exec(t)
-  if (entre) return Number(entre[1])
-  const solo = /^(\d+)$/.exec(t)
-  return solo ? Number(solo[1]) : null
-}
+const esEmpleo = (valor: string) => valor.toLowerCase().includes('empleo')
 
-/** Mínimo de empleos a partir de la distribución de "Empleados actuales" (la de `calcularIndicadores`). */
-export function empleosMinimos(d: Distribucion): EmpleosMinimos {
-  let minimo = 0
-  let personas = 0
-  let sinInterpretar = 0
-  for (const { valor, conteo } of d.items) {
-    const piso = limiteInferior(valor)
-    if (piso === null) sinInterpretar += conteo
-    else {
-      minimo += piso * conteo
-      personas += conteo
-    }
-  }
-  return { minimo, personas, sinInterpretar }
+/** A partir de la distribución del destino del crédito (la de `calcularIndicadores`). */
+export function generacionDeEmpleo(destino: Distribucion): GeneracionEmpleo {
+  const item = destino.items.find((i) => esEmpleo(i.valor))
+  const conteo = item?.conteo ?? 0
+  return { conteo, porcentaje: destino.n === 0 ? null : (conteo / destino.n) * 100, n: destino.n }
 }
