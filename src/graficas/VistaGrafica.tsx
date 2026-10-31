@@ -4,7 +4,7 @@ import { formatoEntero } from '../indicadores/formato'
 import type { DatosGrafica } from './datos'
 import type { GraficaDef } from './definicion'
 import { Echarts } from './Echarts'
-import { MAX_SERIES_LEGIBLES, altoGrafica, construirOpcion } from './opcion'
+import { MAX_SERIES_LEGIBLES, altoGrafica, construirOpcion, recortarParaTarjeta } from './opcion'
 import '../interfaz/estilos.css'
 
 interface Props {
@@ -107,9 +107,24 @@ function Tabla({ datos, def }: { datos: DatosGrafica; def: GraficaDef }) {
   )
 }
 
+/** Aviso breve de la tarjeta compacta: por qué falta algo en el dibujo y dónde verlo. */
+function textoAyuda(datos: DatosGrafica, def: GraficaDef, ocultas: number): string {
+  if (def.grafica === 'dona') return 'Las porciones pequeñas no llevan etiqueta: pase el cursor, amplíe la gráfica o abra la tabla.'
+  const partes: string[] = []
+  if (ocultas > 0) {
+    partes.push(`Se muestran las ${formatoEntero(datos.categorias.length - ocultas)} con más respuestas de ${formatoEntero(datos.categorias.length)}: amplíe la gráfica o abra la tabla para ver todas.`)
+  }
+  if (datos.series.length > MAX_SERIES_LEGIBLES) {
+    partes.push('Con tantos grupos no caben la leyenda ni las cifras: pase el cursor sobre las barras, amplíe la gráfica o abra la tabla.')
+  }
+  return partes.join(' ')
+}
+
 /** Una gráfica con su base (n), avisos, y siempre una tabla con los mismos datos. */
 export function VistaGrafica({ datos, def, compacta = false, acciones, nota }: Props) {
   const opcion = useMemo(() => construirOpcion(datos, def, compacta), [datos, def, compacta])
+  const ocultas = recortarParaTarjeta(datos, def, compacta).ocultas
+  const ayuda = textoAyuda(datos, def, ocultas)
   const sinDatos = datos.series.length === 0 || datos.categorias.length === 0
   const r = datos.resumen
   const resumen = r && r.n > 0
@@ -144,13 +159,8 @@ export function VistaGrafica({ datos, def, compacta = false, acciones, nota }: P
 
       {opcion !== null && <Echarts opcion={opcion} alto={altoGrafica(datos, def, compacta)} etiqueta={`Gráfica: ${datos.titulo}`} />}
 
-      {compacta && def.grafica === 'dona' && opcion !== null && (
-        <p className="grafica__ayuda">Las porciones pequeñas no llevan etiqueta: pase el cursor, amplíe la gráfica o abra la tabla.</p>
-      )}
-
-      {compacta && def.grafica !== 'dona' && opcion !== null && datos.series.length > MAX_SERIES_LEGIBLES && (
-        <p className="grafica__ayuda">Con tantos grupos no caben la leyenda ni las cifras: pase el cursor sobre las barras, amplíe la gráfica o abra la tabla.</p>
-      )}
+      {/* Siempre ocupa su sitio en la tarjeta (aunque vaya vacío): así todas las tarjetas miden lo mismo. */}
+      {compacta && opcion !== null && <p className="grafica__ayuda">{ayuda}</p>}
 
       {resumen !== null && <p className="grafica__resumen">{resumen}</p>}
 

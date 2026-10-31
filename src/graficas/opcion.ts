@@ -55,14 +55,46 @@ export function hayQueDibujar(datos: DatosGrafica, def: GraficaDef): boolean {
   return def.grafica !== 'tabla' && datos.series.length > 0 && datos.categorias.length > 0
 }
 
-/** Alto del lienzo en píxeles: las barras horizontales crecen con el número de barras. */
+/** Alto fijo del lienzo en las tarjetas del tablero: todas miden lo mismo (el de la dona). */
+export const ALTO_TARJETA = 300
+
+/** Categorías de barras horizontales que caben en una tarjeta (con grupos, cada categoría ocupa varias barras). */
+export const MAX_CATEGORIAS_TARJETA = 8
+export const MAX_CATEGORIAS_TARJETA_AGRUPADAS = 5
+
+/** Alto del lienzo en píxeles. En el tablero es fijo; ampliada, las barras horizontales crecen con el número de barras. */
 export function altoGrafica(datos: DatosGrafica, def: GraficaDef, compacta = false): number {
+  if (compacta) return ALTO_TARJETA
   if (def.grafica === 'barras_horizontales') {
     const filas = datos.categorias.length * Math.max(1, datos.series.length)
-    return compacta ? Math.min(420, Math.max(180, 50 + filas * 24)) : Math.min(720, Math.max(260, 70 + filas * 30))
+    return Math.min(720, Math.max(260, 70 + filas * 30))
   }
-  if (def.grafica === 'dona') return compacta ? 300 : 360
-  return compacta ? 240 : 340
+  return def.grafica === 'dona' ? 360 : 340
+}
+
+/**
+ * Tarjeta del tablero con barras horizontales: como el alto es fijo, solo se dibujan las categorías
+ * con más respuestas que caben (de mayor a menor). El resto sigue en la tabla y en la gráfica ampliada.
+ * Si todas caben, no se toca nada (ni el orden).
+ */
+export function recortarParaTarjeta(datos: DatosGrafica, def: GraficaDef, compacta: boolean): { datos: DatosGrafica; ocultas: number } {
+  if (!compacta || def.grafica !== 'barras_horizontales') return { datos, ocultas: 0 }
+  const limite = datos.series.length > 1 ? MAX_CATEGORIAS_TARJETA_AGRUPADAS : MAX_CATEGORIAS_TARJETA
+  const total = datos.categorias.length
+  if (total <= limite) return { datos, ocultas: 0 }
+  const peso = datos.categorias.map((_, i) => datos.series.reduce((suma, s) => suma + (s.celdas[i]?.valor ?? 0), 0))
+  const orden = peso
+    .map((_, i) => i)
+    .sort((a, b) => peso[b]! - peso[a]! || a - b)
+    .slice(0, limite)
+  return {
+    datos: {
+      ...datos,
+      categorias: orden.map((i) => datos.categorias[i]!),
+      series: datos.series.map((s) => ({ ...s, celdas: orden.map((i) => s.celdas[i]!) })),
+    },
+    ocultas: total - limite,
+  }
 }
 
 function dato(c: { valor: number | null; texto: string }): DatoConTexto {
@@ -117,7 +149,8 @@ function barrasSinHuecos(datos: DatosGrafica) {
  * `compacta` (tarjeta del tablero): la dona no lleva leyenda y solo etiqueta las porciones de más
  * de ~4 %; el resto se lee con el cursor, ampliando la gráfica o en la tabla de datos.
  */
-export function construirOpcion(datos: DatosGrafica, def: GraficaDef, compacta = false): EChartsCoreOption | null {
+export function construirOpcion(datosCompletos: DatosGrafica, def: GraficaDef, compacta = false): EChartsCoreOption | null {
+  const datos = recortarParaTarjeta(datosCompletos, def, compacta).datos
   if (!hayQueDibujar(datos, def)) return null
 
   const varias = datos.series.length > 1

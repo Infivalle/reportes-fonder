@@ -1,6 +1,5 @@
 import { useMemo } from 'react'
 import { calcularIndicadores, type Filtros } from '../indicadores/calcular'
-import { generacionDeEmpleo } from '../indicadores/empleo'
 import { formatoEntero, formatoFecha, formatoPorcentaje } from '../indicadores/formato'
 import type { PublicoJson } from '../publico/tipos'
 import './estilos.css'
@@ -28,7 +27,6 @@ export function VistaIndicadores({ datos, filtros }: Props) {
     null,
   )
   const destinoMasFrecuente = destinoTop?.valor ?? 'Sin dato'
-  const empleoGenerado = generacionDeEmpleo(r.destino)
 
   return (
     <section className="indicadores" aria-labelledby="titulo-indicadores">
@@ -95,17 +93,6 @@ export function VistaIndicadores({ datos, filtros }: Props) {
             n={r.satisfaccion.n}
           >
             <Progreso porcentaje={r.satisfaccion.valor} etiqueta="Beneficiarios satisfechos" />
-          </Tarjeta>
-
-          <Tarjeta
-            resumen
-            tono="ambar"
-            titulo="Generación de empleo"
-            valor={r.destino.n === 0 ? 'Sin dato' : `${formatoEntero(empleoGenerado.conteo)} ${empleoGenerado.conteo === 1 ? 'beneficiario' : 'beneficiarios'}`}
-            descripcion={`Dicen haber generado empleo con el crédito (${formatoPorcentaje(empleoGenerado.porcentaje)}). El formulario no registra cuántos empleos.`}
-            n={r.destino.n}
-          >
-            <Progreso porcentaje={empleoGenerado.porcentaje} etiqueta="Beneficiarios que generaron empleo" />
           </Tarjeta>
         </div>
       </section>

@@ -663,11 +663,20 @@ html body {
   padding: 0;
   list-style: none;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr));
-  align-items: start;
+  /* Las tarjetas de una misma fila miden lo mismo. */
+  align-items: stretch;
 }
 
 .tablero__item {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
+}
+
+.tablero__item > .grafica {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
 }
 
 .tablero__vacio {
@@ -694,7 +703,22 @@ html body {
 }
 
 .grafica--compacta .grafica__titulo {
+  /* Reserva dos líneas de título para que el dibujo empiece a la misma altura en todas. */
+  min-height: 2.5em;
   font-size: 1rem;
+  line-height: 1.25;
+}
+
+/* Dos líneas de ayuda reservadas, vacías o no. */
+.grafica--compacta .grafica__ayuda {
+  min-height: 2.4em;
+  line-height: 1.2;
+}
+
+/* "Ver los datos en una tabla" queda siempre al pie de la tarjeta. */
+.grafica--compacta .grafica__detalle {
+  margin-top: auto;
+  padding-top: 12px;
 }
 
 .grafica__filtros {
