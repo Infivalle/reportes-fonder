@@ -7,7 +7,7 @@ import { CambiarClave } from './CambiarClave'
 import { PanelUsuarios } from './PanelUsuarios'
 import '../privado/privado.css'
 
-/** Acceso interno: inicio de sesión y, para el admin, las descargas en Excel. */
+/** Acceso interno: inicio de sesión las descargas en Excel (admin y asesor) y, para el admin, la gestión de usuarios. */
 export function PaginaPrivada() {
   const cliente = clienteCompartido()
   const sesion = useSesion(cliente)
@@ -105,9 +105,12 @@ function ZonaPrivada({ cliente, usuario }: { cliente: SupabaseClient; usuario: U
         </p>
       )}
       {usuario.rol === 'asesor' && (
-        <p role="status" className="indicadores__vacio">
-          Su rol no incluye descargas. La búsqueda de beneficiarios y las fichas se habilitarán en una próxima entrega.
-        </p>
+        <>
+          <PanelExcel cliente={cliente} usuario={usuario} />
+          <p role="status" className="indicadores__vacio">
+            La búsqueda de beneficiarios y las fichas se habilitarán en una próxima entrega.
+          </p>
+        </>
       )}
       {usuario.rol === 'admin' && (
         <>

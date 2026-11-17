@@ -63,11 +63,13 @@ describe('PaginaPrivada', () => {
     expect(screen.getByText(/Administrador/)).toBeTruthy()
   })
 
-  it('el asesor no ve descargas', async () => {
+  it('el asesor ve las dos descargas pero no la gestión de usuarios', async () => {
     clienteCon({ id: 'u2', email: 'asesor@x.test', app_metadata: { rol: 'asesor' } })
     render(<PaginaPrivada />)
-    expect(await screen.findByText(/no incluye descargas/)).toBeTruthy()
-    expect(screen.queryByText(/Generar y descargar/)).toBeNull()
+    expect(await screen.findByRole('button', { name: 'Generar y descargar el cruce' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Generar y descargar la data limpia' })).toBeTruthy()
+    expect(screen.getByText(/Asesor/)).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Usuarios' })).toBeNull()
   })
 
   it('un rol puesto por el propio usuario (user_metadata) no da acceso', async () => {
