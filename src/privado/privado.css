@@ -1,0 +1,78 @@
+/* Acceso interno (F4). Reutiliza las variables y botones de interfaz/estilos.css. */
+.privado__sesion {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.privado__tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+  min-width: 0;
+  padding: 16px;
+  background: var(--f-tarjeta);
+  border: 1px solid var(--f-borde);
+  border-top: 4px solid var(--t-azul);
+  border-radius: 12px;
+}
+
+.privado__acceso {
+  max-width: 420px;
+}
+
+.privado__acceso .filtro,
+.privado__tarjeta .filtro {
+  align-self: stretch;
+}
+
+.privado__subtitulo {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.filtro input {
+  min-height: 44px;
+  padding: 0 12px;
+  font: inherit;
+  color: var(--f-texto);
+  background: var(--f-tarjeta);
+  border: 1px solid var(--f-borde);
+  border-radius: 8px;
+}
+
+.filtro input[type='file'] {
+  padding: 8px 12px;
+}
+
+.filtro input:focus-visible {
+  outline: 3px solid var(--f-acento);
+  outline-offset: 2px;
+}
+
+.privado__rejilla {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
+  align-items: start;
+}
+
+.privado__informe {
+  align-self: stretch;
+}
+
+.privado__informe p {
+  margin: 0;
+}
+
+.privado__lista {
+  margin: 8px 0 0;
+  padding-left: 20px;
+  font-size: 0.9rem;
+}
+
+.privado__nota {
+  grid-column: 1 / -1;
+}

@@ -11,12 +11,13 @@ import { MUNICIPIOS_VALLE } from '../limpieza/municipios'
 import { claveProyecto, listarProyectos, type OpcionProyecto } from '../indicadores/proyectos'
 import { etiquetaMes } from '../indicadores/consulta'
 
-export type Ruta = 'indicadores' | 'mapa' | 'graficas'
+export type Ruta = 'indicadores' | 'mapa' | 'graficas' | 'privado'
 
 export const RUTAS: readonly { ruta: Ruta; etiqueta: string }[] = [
   { ruta: 'indicadores', etiqueta: 'Indicadores' },
   { ruta: 'mapa', etiqueta: 'Mapa' },
   { ruta: 'graficas', etiqueta: 'Mis gráficas' },
+  { ruta: 'privado', etiqueta: 'Acceso interno' },
 ]
 
 export const RUTA_INICIAL: Ruta = 'indicadores'

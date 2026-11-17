@@ -12,6 +12,8 @@ import './estilos.css'
 const PaginaGraficas = lazy(() => import('./PaginaGraficas').then((m) => ({ default: m.PaginaGraficas })))
 // El mapa (geometría de los 42 municipios) tampoco se descarga hasta abrir "Mapa".
 const PaginaMapa = lazy(() => import('./PaginaMapa').then((m) => ({ default: m.PaginaMapa })))
+// El acceso interno (inicio de sesión y descargas) no depende de publico.json y solo se descarga al abrirlo.
+const PaginaPrivada = lazy(() => import('./PaginaPrivada').then((m) => ({ default: m.PaginaPrivada })))
 
 interface Props {
   /** Otra dirección de publico.json (pruebas); por defecto la del sitio. */
@@ -35,24 +37,32 @@ export function Aplicacion({ url }: Props) {
       <Encabezado />
       <Navegacion activa={ruta} filtros={filtros} />
       <main id="contenido" className="contenido">
-        {publico.estado === 'cargando' && <p role="status">Cargando indicadores…</p>}
-        {publico.estado === 'error' && (
-          <p role="alert">No se pudieron cargar los datos ({publico.mensaje}). Intente de nuevo en unos minutos.</p>
-        )}
-        {publico.estado === 'vacio' && <p role="status">Todavía no hay datos publicados. {publico.motivo}</p>}
-        {datos !== null && opciones !== null && (
+        {ruta === 'privado' ? (
+          <Suspense fallback={<p role="status">Cargando…</p>}>
+            <PaginaPrivada />
+          </Suspense>
+        ) : (
           <>
-            <BarraFiltros opciones={opciones} filtros={filtros} onCambio={cambiarFiltros} />
-            {ruta === 'indicadores' ? (
-              <VistaIndicadores datos={datos} filtros={filtros} />
-            ) : ruta === 'mapa' ? (
-              <Suspense fallback={<p role="status">Cargando mapa…</p>}>
-                <PaginaMapa datos={datos} filtros={filtros} />
-              </Suspense>
-            ) : (
-              <Suspense fallback={<p role="status">Cargando gráficas…</p>}>
-                <PaginaGraficas datos={datos} filtros={filtros} />
-              </Suspense>
+            {publico.estado === 'cargando' && <p role="status">Cargando indicadores…</p>}
+            {publico.estado === 'error' && (
+              <p role="alert">No se pudieron cargar los datos ({publico.mensaje}). Intente de nuevo en unos minutos.</p>
+            )}
+            {publico.estado === 'vacio' && <p role="status">Todavía no hay datos publicados. {publico.motivo}</p>}
+            {datos !== null && opciones !== null && (
+              <>
+                <BarraFiltros opciones={opciones} filtros={filtros} onCambio={cambiarFiltros} />
+                {ruta === 'indicadores' ? (
+                  <VistaIndicadores datos={datos} filtros={filtros} />
+                ) : ruta === 'mapa' ? (
+                  <Suspense fallback={<p role="status">Cargando mapa…</p>}>
+                    <PaginaMapa datos={datos} filtros={filtros} />
+                  </Suspense>
+                ) : (
+                  <Suspense fallback={<p role="status">Cargando gráficas…</p>}>
+                    <PaginaGraficas datos={datos} filtros={filtros} />
+                  </Suspense>
+                )}
+              </>
             )}
           </>
         )}
