@@ -18,7 +18,7 @@ const base: UsuarioListado[] = [
 ]
 
 /** Cliente de mentira con sesión de admin y una Edge Function simulada. */
-function montar(opts: { usuario?: typeof YO; respuesta?: (cuerpo: Record<string, unknown>) => { data?: unknown; error?: unknown } } = {}) {
+function montar(opts: { usuario?: typeof YO; updateUser?: (a: Record<string, unknown>) => { error: unknown }; respuesta?: (cuerpo: Record<string, unknown>) => { data?: unknown; error?: unknown } } = {}) {
   const usuario = opts.usuario ?? YO
   const invoke = vi.fn((_nombre: string, { body }: { body: Record<string, unknown> }) => {
     if (opts.respuesta !== undefined) {
@@ -29,7 +29,7 @@ function montar(opts: { usuario?: typeof YO; respuesta?: (cuerpo: Record<string,
     if (body['accion'] === 'crear') return Promise.resolve({ data: { ok: true, usuario: { ...base[1], id: 'u-nuevo', correo: String(body['correo']) }, claveTemporal: 'Temporal-Clave-12#' }, error: null })
     return Promise.resolve({ data: { ok: true, usuario: base[1] }, error: null })
   })
-  const updateUser = vi.fn(() => Promise.resolve({ error: null }))
+  const updateUser = vi.fn((a: Record<string, unknown>) => Promise.resolve(opts.updateUser !== undefined ? opts.updateUser(a) : { error: null }))
   estado.cliente = {
     auth: {
       getSession: () => Promise.resolve({ data: { session: { user: usuario } } }),
@@ -123,6 +123,22 @@ describe('Panel de usuarios', () => {
     expect((await screen.findByRole('alert')).textContent).toMatch(/único administrador activo/)
   })
 
+  it('distingue función no desplegada, CORS y caída de la función', async () => {
+    const casos: [unknown, RegExp][] = [
+      [{ context: new Response(JSON.stringify({ code: 'NOT_FOUND', message: 'Requested function was not found' }), { status: 404 }) }, /no está desplegada/],
+      [{ name: 'FunctionsFetchError', message: 'Failed to send a request to the Edge Function' }, /ALLOWED_ORIGIN/],
+      [{ context: new Response('boom', { status: 500 }) }, /código 500/],
+      [{ context: new Response('{}', { status: 401 }) }, /--no-verify-jwt/],
+    ]
+    for (const [error, patron] of casos) {
+      montar({ respuesta: () => ({ error }) })
+      render(<PaginaPrivada />)
+      await abrirUsuarios()
+      expect((await screen.findByRole('alert')).textContent).toMatch(patron)
+      cleanup()
+    }
+  })
+
   it('si no hay conexión con la función lo dice', async () => {
     montar({ respuesta: () => ({ error: new Error('Failed to send a request') }) })
     render(<PaginaPrivada />)
@@ -162,5 +178,41 @@ describe('Contraseña temporal', () => {
     await userEvent.type(screen.getByLabelText('Repita la contraseña'), 'Una-Clave-Larga-9!')
     await userEvent.click(screen.getByRole('button', { name: 'Guardar contraseña' }))
     await waitFor(() => expect(updateUser).toHaveBeenCalledWith({ password: 'Una-Clave-Larga-9!', data: { debe_cambiar_clave: false } }))
+  })
+})
+
+describe('Errores al cambiar la contraseña', () => {
+  const temporal = { ...YO, user_metadata: { debe_cambiar_clave: true } }
+  async function intentar() {
+    await userEvent.type(await screen.findByLabelText('Contraseña nueva'), 'Una-Clave-Larga-9!')
+    await userEvent.type(screen.getByLabelText('Repita la contraseña'), 'Una-Clave-Larga-9!')
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar contraseña' }))
+  }
+
+  it('explica una contraseña débil con sus razones', async () => {
+    montar({ usuario: temporal, updateUser: () => ({ error: { code: 'weak_password', name: 'AuthWeakPasswordError', message: 'x', status: 422, reasons: ['characters', 'pwned'] } }) })
+    render(<PaginaPrivada />)
+    await intentar()
+    expect((await screen.findByRole('alert')).textContent).toMatch(/tipos de caracteres.*filtraciones/)
+  })
+
+  it('un error desconocido muestra el código y el mensaje de Supabase', async () => {
+    montar({ usuario: temporal, updateUser: () => ({ error: { code: 'raro', message: 'algo pasó', status: 400 } }) })
+    render(<PaginaPrivada />)
+    await intentar()
+    expect((await screen.findByRole('alert')).textContent).toContain('raro: algo pasó')
+  })
+
+  it('si el proyecto exige la contraseña actual, la pide y la envía como current_password', async () => {
+    const { updateUser } = montar({
+      usuario: temporal,
+      updateUser: (a) => (a['current_password'] === undefined ? { error: { code: 'current_password_required', message: 'Current password required when setting new password.', status: 400 } } : { error: null }),
+    })
+    render(<PaginaPrivada />)
+    await intentar()
+    expect((await screen.findByRole('alert')).textContent).toMatch(/contraseña actual/)
+    await userEvent.type(await screen.findByLabelText('Contraseña temporal (la que recibió)'), 'Temporal-Clave-12#')
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar contraseña' }))
+    await waitFor(() => expect(updateUser).toHaveBeenLastCalledWith({ password: 'Una-Clave-Larga-9!', data: { debe_cambiar_clave: false }, current_password: 'Temporal-Clave-12#' }))
   })
 })
