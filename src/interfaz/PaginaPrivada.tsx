@@ -3,6 +3,8 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { clienteCompartido } from '../privado/cliente'
 import { descargarXlsx } from '../privado/descargar'
 import { useSesion, type UsuarioSesion } from '../privado/useSesion'
+import { CambiarClave } from './CambiarClave'
+import { PanelUsuarios } from './PanelUsuarios'
 import '../privado/privado.css'
 
 /** Acceso interno: inicio de sesión y, para el admin, las descargas en Excel. */
@@ -80,6 +82,11 @@ function FormularioAcceso({ cliente }: { cliente: SupabaseClient }) {
 }
 
 function ZonaPrivada({ cliente, usuario }: { cliente: SupabaseClient; usuario: UsuarioSesion }) {
+  const [seccion, setSeccion] = useState<'descargas' | 'usuarios'>('descargas')
+
+  // Con una contraseña temporal no se ve nada más hasta elegir la propia.
+  if (usuario.debeCambiarClave) return <CambiarClave cliente={cliente} />
+
   return (
     <>
       <div className="privado__sesion">
@@ -102,7 +109,19 @@ function ZonaPrivada({ cliente, usuario }: { cliente: SupabaseClient; usuario: U
           Su rol no incluye descargas. La búsqueda de beneficiarios y las fichas se habilitarán en una próxima entrega.
         </p>
       )}
-      {usuario.rol === 'admin' && <PanelExcel cliente={cliente} usuario={usuario} />}
+      {usuario.rol === 'admin' && (
+        <>
+          <div className="privado__secciones" role="group" aria-label="Secciones del acceso interno">
+            <button type="button" className="boton" aria-pressed={seccion === 'descargas'} onClick={() => setSeccion('descargas')}>
+              Descargas
+            </button>
+            <button type="button" className="boton" aria-pressed={seccion === 'usuarios'} onClick={() => setSeccion('usuarios')}>
+              Usuarios
+            </button>
+          </div>
+          {seccion === 'descargas' ? <PanelExcel cliente={cliente} usuario={usuario} /> : <PanelUsuarios cliente={cliente} yoId={usuario.id} />}
+        </>
+      )}
     </>
   )
 }

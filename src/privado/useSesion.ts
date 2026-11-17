@@ -7,6 +7,8 @@ export interface UsuarioSesion {
   correo: string
   /** null = tiene cuenta pero sin rol asignado. */
   rol: Rol | null
+  /** Entró con una contraseña temporal y debe elegir la suya. Es solo una guía de pantalla (user_metadata lo puede cambiar el propio usuario). */
+  debeCambiarClave: boolean
 }
 
 export type EstadoSesion = { estado: 'cargando' } | { estado: 'sin_sesion' } | { estado: 'activa'; usuario: UsuarioSesion }
@@ -18,9 +20,11 @@ export function useSesion(cliente: SupabaseClient | null): EstadoSesion {
   useEffect(() => {
     if (cliente === null) return
     let vivo = true
-    const aplicar = (u: { id: string; email?: string | undefined; app_metadata?: Record<string, unknown> | undefined } | null) => {
+    const aplicar = (
+      u: { id: string; email?: string | undefined; app_metadata?: Record<string, unknown> | undefined; user_metadata?: Record<string, unknown> | undefined } | null,
+    ) => {
       if (!vivo) return
-      setSesion(u === null ? { estado: 'sin_sesion' } : { estado: 'activa', usuario: { id: u.id, correo: u.email ?? '', rol: rolDe(u) } })
+      setSesion(u === null ? { estado: 'sin_sesion' } : { estado: 'activa', usuario: { id: u.id, correo: u.email ?? '', rol: rolDe(u), debeCambiarClave: u.user_metadata?.['debe_cambiar_clave'] === true } })
     }
     void cliente.auth.getSession().then(({ data }) => aplicar(data.session?.user ?? null))
     const { data: suscripcion } = cliente.auth.onAuthStateChange((_evento, s) => aplicar(s?.user ?? null))

@@ -13,12 +13,15 @@ import { etiquetaMes } from '../indicadores/consulta'
 
 export type Ruta = 'indicadores' | 'mapa' | 'graficas' | 'privado'
 
-export const RUTAS: readonly { ruta: Ruta; etiqueta: string }[] = [
+/** Pestañas visibles en la navegación. "privado" no está aquí a propósito: solo se entra con #/privado. */
+export const RUTAS: readonly { ruta: Exclude<Ruta, 'privado'>; etiqueta: string }[] = [
   { ruta: 'indicadores', etiqueta: 'Indicadores' },
   { ruta: 'mapa', etiqueta: 'Mapa' },
   { ruta: 'graficas', etiqueta: 'Mis gráficas' },
-  { ruta: 'privado', etiqueta: 'Acceso interno' },
 ]
+
+/** Ruta sin pestaña (acceso interno): se reconoce en la URL pero no se ofrece en la navegación. */
+const RUTA_OCULTA: Ruta = 'privado'
 
 export const RUTA_INICIAL: Ruta = 'indicadores'
 
@@ -52,7 +55,7 @@ export function leerHash(hash: string): EstadoRuta {
   const consulta = corte === -1 ? '' : texto.slice(corte + 1)
 
   const nombre = camino.replace(/^\/+/, '').replace(/\/+$/, '')
-  const ruta = RUTAS.find((r) => r.ruta === nombre)?.ruta ?? RUTA_INICIAL
+  const ruta: Ruta = nombre === RUTA_OCULTA ? RUTA_OCULTA : (RUTAS.find((r) => r.ruta === nombre)?.ruta ?? RUTA_INICIAL)
 
   const q = new URLSearchParams(consulta)
   return {

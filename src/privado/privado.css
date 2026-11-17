@@ -76,3 +76,114 @@
 .privado__nota {
   grid-column: 1 / -1;
 }
+
+/* Secciones, usuarios y contraseña temporal */
+.privado__secciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.privado__secciones .boton[aria-pressed='true'] {
+  color: #f8fbff;
+  background: var(--f-acento);
+}
+
+.privado__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.privado__usuarios {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.privado__usuarios > .privado__tarjeta {
+  max-width: 560px;
+}
+
+.privado__fila {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-self: stretch;
+}
+
+.privado__fila .filtro {
+  flex: 1 1 200px;
+}
+
+.privado__clave {
+  padding: 12px 16px;
+  background: var(--f-aviso-fondo);
+  color: var(--f-aviso-texto);
+  border: 1px solid var(--f-borde);
+  border-radius: 8px;
+}
+
+.privado__clave p {
+  margin: 0 0 8px;
+}
+
+.privado__codigo {
+  display: inline-block;
+  padding: 6px 10px;
+  font-size: 1.15rem;
+  letter-spacing: 0.04em;
+  user-select: all;
+  word-break: break-all;
+  background: var(--f-tarjeta);
+  color: var(--f-texto);
+  border-radius: 6px;
+}
+
+.privado__tabla {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.privado__tabla:focus-visible {
+  outline: 3px solid var(--f-acento);
+  outline-offset: 2px;
+}
+
+.privado__usuarios-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  background: var(--f-tarjeta);
+}
+
+.privado__usuarios-tabla th,
+.privado__usuarios-tabla td {
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--f-borde);
+}
+
+.privado__usuarios-tabla th[scope='col'] {
+  white-space: nowrap;
+  background: var(--f-panel);
+}
+
+.privado__yo {
+  font-weight: 400;
+  color: var(--f-suave);
+}
+
+.privado__acciones-fila,
+.privado__confirmar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  align-items: center;
+}
+
+.privado__usuarios-tabla .boton--texto {
+  margin-left: 0;
+}

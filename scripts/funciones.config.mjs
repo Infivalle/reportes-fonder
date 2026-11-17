@@ -5,6 +5,10 @@ export const FUNCIONES = [
     entrada: 'src/funciones/cargar-datos/entrada.ts',
     salida: 'supabase/functions/cargar-datos/index.ts',
   },
+  {
+    entrada: 'src/funciones/gestionar-usuarios/entrada.ts',
+    salida: 'supabase/functions/gestionar-usuarios/index.ts',
+  },
 ]
 
 export const BANNER = [
